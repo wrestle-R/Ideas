@@ -47,7 +47,11 @@ export default function Home() {
         getIdeas(ITEMS_PER_PAGE, offset, searchQuery, selectedCategory),
         getTotalIdeasCount(searchQuery, selectedCategory)
       ])
-      
+      // Log ideas and total count for debugging
+      console.log('Fetched ideas:', fetchedIdeas)
+      console.log('Total count:', total)
+      console.log('Search query:', searchQuery)
+      console.log('Selected category:', selectedCategory)
       if (isLoadMore) {
         setIdeas(prev => [...prev, ...fetchedIdeas])
       } else {

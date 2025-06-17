@@ -54,3 +54,19 @@ export async function getTotalIdeasCount(searchQuery?: string, category?: string
   
   return await client.fetch(query)
 }
+
+export async function getIdeaById(id: string) {
+  const query = `*[_type == "idea" && _id == "${id}"][0] {
+    _id,
+    title,
+    slug,
+    category,
+    notes,
+    publishedAt,
+    author,
+    body,
+    "text": body[0].children[0].text
+  }`
+  
+  return await client.fetch(query)
+}

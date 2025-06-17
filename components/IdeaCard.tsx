@@ -1,5 +1,6 @@
 "use client"
 import { Calendar, User, Heart, MessageCircle } from "lucide-react"
+import Link from "next/link"
 
 interface IdeaCardProps {
   idea: {
@@ -54,7 +55,9 @@ export default function IdeaCard({ idea }: IdeaCardProps) {
 
       {/* Idea Title */}
       <h3 className="text-xl font-semibold text-white mb-3 group-hover:text-white transition-colors line-clamp-2">
-        {idea.title}
+        <Link href={`/idea/${idea._id}`}>
+          {idea.title}
+        </Link>
       </h3>
       
       {/* Idea Description */}
@@ -83,9 +86,12 @@ export default function IdeaCard({ idea }: IdeaCardProps) {
             <span className="text-sm">0</span>
           </div>
         </div>
-        <button className="text-white hover:text-white text-sm font-medium transition-colors">
+        <Link 
+          href={`/idea/${idea._id}`}
+          className="text-white hover:text-white text-sm font-medium transition-colors"
+        >
           View →
-        </button>
+        </Link>
       </div>
     </div>
   )
