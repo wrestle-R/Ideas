@@ -26,7 +26,7 @@ export default function CreateIdeaPage() {
     console.log('Session status:', status)
     console.log('Session data:', session)
     if (session?.user) {
-      // console.log('User ID:', session.user.id)
+      console.log('User githubId:', (session.user as any).githubId)
       console.log('User name:', session.user.name)
       console.log('User email:', session.user.email)
       console.log('User image:', session.user.image)
@@ -42,7 +42,7 @@ export default function CreateIdeaPage() {
       
       // Add author information
       if (session?.user) {
-        // formDataObj.append('authorId', session.user.id || '')
+        formDataObj.append('authorId', (session.user as any).githubId?.toString() || session.user.email || '')
         formDataObj.append('authorName', session.user.name || '')
       }
       
@@ -107,11 +107,11 @@ export default function CreateIdeaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Background gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800 opacity-50"></div>
+    <div className="min-h-screen bg-black text-white pt-3">
+      {/* Background gradient overlay - moved below navbar */}
+      <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800 opacity-50 -z-10"></div>
       
-      <div className="relative z-10 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="relative z-0 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-10">
@@ -121,11 +121,7 @@ export default function CreateIdeaPage() {
             <p className="text-gray-400 text-lg">
               Transform your thoughts into actionable concepts
             </p>
-            {session?.user && (
-              <p className="text-sm text-gray-500 mt-2">
-                Creating as {session.user.name || session.user.email}
-              </p>
-            )}
+            
           </div>
 
           {/* Form Container */}
@@ -224,24 +220,18 @@ export default function CreateIdeaPage() {
                   {!isPreviewMode ? (
                     <div className="relative">
                       <textarea
-                        id="notes"
-                        name="notes"
-                        rows={8}
-                        value={formData.notes}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none group-hover:border-gray-500 font-mono text-sm"
-                        placeholder="Add detailed notes, implementation ideas, or research links...
-
-You can use markdown formatting:
-• **bold** and *italic* text
-• `code snippets` and code blocks
-• Links and lists
-• Headers with # ## ###"
+                      id="notes"
+                      name="notes"
+                      rows={8}
+                      value={formData.notes}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none group-hover:border-gray-500 font-mono text-sm"
+                      placeholder="Add detailed notes, implementation ideas, or research links.  Use **bold**, *italic*, `code`, # headings, and - lists for formatting."
                       />
                       
                       {/* Character count */}
                       <div className="absolute bottom-3 right-3 text-xs text-gray-500">
-                        {formData.notes.length} chars
+                      {formData.notes.length} chars
                       </div>
                     </div>
                   ) : (
@@ -263,14 +253,14 @@ You can use markdown formatting:
                   )}
                 </div>
 
-                {/* Subtle markdown help */}
+                {/* Subtle markdown help
                 {!isPreviewMode && formData.notes.length === 0 && (
                   <div className="mt-2 text-xs text-gray-500">
                     <span className="opacity-75">
                       Format with markdown: **bold**, *italic*, `code`, # headers, - lists
                     </span>
                   </div>
-                )}
+                )} */}
               </div>
 
               {/* Submit Buttons */}

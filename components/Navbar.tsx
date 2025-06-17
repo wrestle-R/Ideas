@@ -1,6 +1,7 @@
 "use client"
 import { useSession, signIn, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 export default function Navbar() {
   const { data: session, status } = useSession()
@@ -12,7 +13,10 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo/Title */}
           <div className="flex-shrink-0">
-            <h1 className="text-2xl font-bold text-white">Ideas</h1>
+            <h1 className="text-2xl font-bold text-white">
+              <Link href={"/"}>
+              Ideas
+              </Link></h1>
           </div>
 
           {/* Auth Section */}
