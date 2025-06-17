@@ -2,9 +2,10 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { getIdeasByAuthor, getAuthorIdeasCount, getAuthorInfo } from '@/lib/sanity'
-import { Calendar, User, ArrowLeft, ExternalLink, Github } from 'lucide-react'
+import { getUserBio } from '@/lib/actions'
+import { Calendar, User, ArrowLeft, ExternalLink, Github, Lightbulb } from 'lucide-react'
 import Link from 'next/link'
-import IdeaCard from '@/components/IdeaCard'
+import AuthorIdeaCard from '@/components/AuthorIdeaCard'
 
 interface Idea {
   _id: string
@@ -17,12 +18,14 @@ interface Idea {
     id: string
     name: string
   }
+  body?: any[]
   text?: string
 }
 
 interface Author {
   id: string
   name: string
+  bio?: string
 }
 
 export default function AuthorPage() {
@@ -50,10 +53,11 @@ export default function AuthorPage() {
         
         const authorId = Array.isArray(params.id) ? params.id[0] : params.id
         
-        const [fetchedIdeas, total, authorInfo] = await Promise.all([
+        const [fetchedIdeas, total, authorInfo, bioData] = await Promise.all([
           getIdeasByAuthor(authorId, ITEMS_PER_PAGE, 0),
           getAuthorIdeasCount(authorId),
-          getAuthorInfo(authorId)
+          getAuthorInfo(authorId),
+          getUserBio(authorId)
         ])
         
         if (!authorInfo) {
@@ -61,7 +65,10 @@ export default function AuthorPage() {
         } else {
           setIdeas(fetchedIdeas)
           setTotalCount(total)
-          setAuthor(authorInfo)
+          setAuthor({
+            ...authorInfo,
+            bio: bioData?.bio || undefined
+          })
           setHasMore(fetchedIdeas.length < total)
         }
       } catch (err) {
@@ -161,6 +168,12 @@ export default function AuthorPage() {
                   </h1>
                 </div>
                 
+                {author.bio && (
+                  <p className="text-gray-300 text-lg mb-6 leading-relaxed">
+                    {author.bio}
+                  </p>
+                )}
+                
                 <div className="flex flex-wrap items-center gap-6 text-gray-300">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
@@ -186,19 +199,27 @@ export default function AuthorPage() {
 
           {/* Ideas Grid */}
           <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-white mb-6">
-              Ideas by {author.name}
-            </h2>
+            <div className="flex items-center gap-3 mb-6">
+              <Lightbulb className="h-6 w-6 text-yellow-400" />
+              <h2 className="text-2xl font-semibold text-white">
+                Ideas by {author.name}
+              </h2>
+              <span className="bg-gray-800 text-gray-300 px-3 py-1 rounded-full text-sm">
+                {totalCount} total
+              </span>
+            </div>
             
             {ideas.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-400">No ideas found for this author.</p>
+              <div className="text-center py-16">
+                <Lightbulb className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-400 text-lg">No ideas shared yet.</p>
+                <p className="text-gray-500 text-sm mt-2">Check back later for new ideas!</p>
               </div>
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {ideas.map((idea) => (
-                    <IdeaCard key={idea._id} idea={idea} />
+                    <AuthorIdeaCard key={idea._id} idea={idea} />
                   ))}
                 </div>
 
@@ -213,7 +234,7 @@ export default function AuthorPage() {
                       {loadingMore ? (
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Loading...
+                          Loading more ideas...
                         </div>
                       ) : (
                         "Load More Ideas"

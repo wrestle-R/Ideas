@@ -99,3 +99,8 @@ export async function getAuthorInfo(authorId: string) {
   const result = await client.fetch(query)
   return result?.author || null
 }
+
+export async function getUserBio(authorId: string) {
+  const query = `*[_type == "bio" && author.id == "${authorId}"][0]`
+  return await client.fetch(query)
+}

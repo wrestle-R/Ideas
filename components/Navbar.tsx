@@ -14,10 +14,10 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo/Title */}
           <div className="flex-shrink-0">
-            <h1 className="text-2xl font-bold text-white">
-              <Link href={"/"}>
-              Ideas
-              </Link></h1>
+            <Link href="/" className="flex items-center space-x-2">
+              <Lightbulb className="h-6 w-6 text-yellow-400" />
+              <h1 className="text-2xl font-bold text-white">Ideas</h1>
+            </Link>
           </div>
 
           {/* Auth Section */}
@@ -42,7 +42,7 @@ export default function Navbar() {
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-lg py-1 z-50">
                     <Link
-                      href="#"
+                      href="/my-ideas"
                       className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors duration-200"
                       onClick={() => setIsDropdownOpen(false)}
                     >

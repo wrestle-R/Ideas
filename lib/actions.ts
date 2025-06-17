@@ -76,3 +76,65 @@ export async function createIdea(formData: FormData) {
     return { error: 'Failed to create idea. Please try again.' }
   }
 }
+
+export async function createUserBio(formData: FormData) {
+  try {
+    const bio = formData.get('bio') as string
+    const authorId = formData.get('authorId') as string
+    const authorName = formData.get('authorName') as string
+    
+    if (!bio || !authorId) {
+      return { error: 'Bio and author ID are required' }
+    }
+
+    const newBio = {
+      _type: 'bio',
+      bio,
+      author: {
+        id: authorId,
+        name: authorName || 'Anonymous User'
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+
+    const result = await client.create(newBio)
+    
+    revalidatePath('/profile')
+    return { success: true, bio: result }
+    
+  } catch (error) {
+    console.error('Error creating bio:', error)
+    return { error: 'Failed to create bio. Please try again.' }
+  }
+}
+
+export async function getUserBio(authorId: string) {
+  try {
+    const query = `*[_type == "bio" && author.id == "${authorId}"][0]`
+    const bio = await client.fetch(query)
+    return bio
+  } catch (error) {
+    console.error('Error fetching bio:', error)
+    return null
+  }
+}
+
+export async function updateUserBio(bioId: string, newBio: string) {
+  try {
+    const result = await client
+      .patch(bioId)
+      .set({ 
+        bio: newBio,
+        updatedAt: new Date().toISOString()
+      })
+      .commit()
+    
+    revalidatePath('/profile')
+    return { success: true, bio: result }
+    
+  } catch (error) {
+    console.error('Error updating bio:', error)
+    return { error: 'Failed to update bio. Please try again.' }
+  }
+}
