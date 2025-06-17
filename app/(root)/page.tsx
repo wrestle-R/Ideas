@@ -80,13 +80,13 @@ export default function Home() {
       {/* Hero Section */}
 <section className="container mx-auto px-6 py-12 text-center relative overflow-hidden">
   {/* Background decorative elements */}
-  <div className="absolute top-6 left-6 w-10 h-10 rounded-full bg-gray-900/20 blur-xl"></div>
-  <div className="absolute bottom-6 right-6 w-12 h-12 rounded-full bg-gray-800/20 blur-xl"></div>
-  <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-gray-400 rounded-full"></div>
-  <div className="absolute top-2/3 left-1/3 w-1 h-1 bg-gray-500 rounded-full"></div>
+  <div className="absolute top-6 left-6 w-10 h-10 rounded-full bg-black/20 blur-xl"></div>
+  <div className="absolute bottom-6 right-6 w-12 h-12 rounded-full bg-black/20 blur-xl"></div>
+  <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-white rounded-full"></div>
+  <div className="absolute top-2/3 left-1/3 w-1 h-1 bg-white rounded-full"></div>
 
   <div className="relative max-w-3xl mx-auto">
-    <div className="inline-block px-3 py-1 text-xs font-medium bg-gray-900/30 text-gray-300 rounded-full border border-gray-800/50 mb-4">
+    <div className="inline-block px-3 py-1 text-xs font-medium bg-black/30 text-white rounded-full border border-white/50 mb-4">
       <Sparkles className="h-3 w-3 inline mr-1" />
       Share Your Brilliance
     </div>
@@ -94,10 +94,10 @@ export default function Home() {
     <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
       Where Great Ideas
       <br />
-      <span className="text-gray-400">Come to Life</span>
+      <span className="text-white">Come to Life</span>
     </h2>
     
-    <p className="text-lg text-gray-300 max-w-xl mx-auto mb-6 leading-relaxed">
+    <p className="text-lg text-white max-w-xl mx-auto mb-6 leading-relaxed">
       A simple place to share and discover brilliant ideas from creative minds around the world. 
       Turn your thoughts into inspiration for others.
     </p>
@@ -108,17 +108,17 @@ export default function Home() {
     <div className="flex justify-center items-center gap-6 mb-6 text-sm">
       <div className="text-center">
         <div className="text-xl font-bold text-white">1,247</div>
-        <div className="text-gray-500">Ideas Shared</div>
+        <div className="text-white">Ideas Shared</div>
       </div>
-      <div className="w-px h-6 bg-gray-800/30"></div>
+      <div className="w-px h-6 bg-white/30"></div>
       <div className="text-center">
         <div className="text-xl font-bold text-white">892</div>
-        <div className="text-gray-500">Creative Minds</div>
+        <div className="text-white">Creative Minds</div>
       </div>
-      <div className="w-px h-6 bg-gray-800/30"></div>
+      <div className="w-px h-6 bg-white/30"></div>
       <div className="text-center">
         <div className="text-xl font-bold text-white">3.2k</div>
-        <div className="text-gray-500">Collaborations</div>
+        <div className="text-white">Collaborations</div>
       </div>
     </div>
 
@@ -126,7 +126,7 @@ export default function Home() {
     {!session && (
       <button 
         onClick={() => signIn()}
-        className="bg-white hover:bg-gray-200 text-black font-semibold py-2.5 px-6 rounded-lg transition-all duration-200 shadow-lg flex items-center gap-2 mx-auto"
+        className="bg-white hover:bg-black hover:text-white text-black font-semibold py-2.5 px-6 rounded-lg transition-all duration-200 shadow-lg flex items-center gap-2 mx-auto border border-white hover:border-white"
       >
         <Lightbulb className="h-4 w-4" />
         Start Sharing Ideas
@@ -142,20 +142,20 @@ export default function Home() {
           {ideas.map((idea) => (
             <div 
               key={idea.id}
-              className="bg-gray-900/50 border border-gray-800/30 rounded-lg p-6 hover:border-gray-600/50 transition-all duration-200 hover:shadow-lg hover:shadow-gray-500/10 group backdrop-blur-sm cursor-pointer"
+              className="bg-black/50 border border-white/30 rounded-lg p-6 hover:border-white/50 transition-all duration-200 hover:shadow-lg hover:shadow-white/10 group backdrop-blur-sm cursor-pointer"
             >
               {/* Idea Title */}
-              <h3 className="text-xl font-semibold text-white mb-3 group-hover:text-gray-300 transition-colors line-clamp-2">
+              <h3 className="text-xl font-semibold text-white mb-3 group-hover:text-white transition-colors line-clamp-2">
                 {idea.title}
               </h3>
               
               {/* Idea Description */}
-              <p className="text-gray-400 mb-4 line-clamp-3 text-sm leading-relaxed">
+              <p className="text-white mb-4 line-clamp-3 text-sm leading-relaxed">
                 {idea.description}
               </p>
 
               {/* Author and Date */}
-              <div className="flex items-center gap-2 mb-4 text-sm text-gray-500">
+              <div className="flex items-center gap-2 mb-4 text-sm text-white">
                 <User className="h-4 w-4" />
                 <span>{idea.author}</span>
                 <span>•</span>
@@ -164,18 +164,18 @@ export default function Home() {
               </div>
 
               {/* Engagement Stats */}
-              <div className="flex items-center justify-between pt-4 border-t border-gray-800/30">
+              <div className="flex items-center justify-between pt-4 border-t border-white/30">
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1 text-gray-500 hover:text-gray-300 transition-colors cursor-pointer">
+                  <div className="flex items-center gap-1 text-white hover:text-white transition-colors cursor-pointer">
                     <Heart className="h-4 w-4" />
                     <span className="text-sm">{idea.likes}</span>
                   </div>
-                  <div className="flex items-center gap-1 text-gray-500 hover:text-gray-300 transition-colors cursor-pointer">
+                  <div className="flex items-center gap-1 text-white hover:text-white transition-colors cursor-pointer">
                     <MessageCircle className="h-4 w-4" />
                     <span className="text-sm">{idea.comments}</span>
                   </div>
                 </div>
-                <button className="text-gray-400 hover:text-gray-300 text-sm font-medium transition-colors">
+                <button className="text-white hover:text-white text-sm font-medium transition-colors">
                   View →
                 </button>
               </div>
@@ -185,7 +185,7 @@ export default function Home() {
 
         {/* Load More Button */}
         <div className="text-center mt-12">
-          <button className="border border-gray-600/50 text-gray-300 hover:bg-gray-900/20 hover:border-gray-500 font-semibold py-3 px-8 rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-gray-500/10">
+          <button className="border border-white/50 text-white hover:bg-white/20 hover:border-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-white/10">
             Load More Ideas
           </button>
         </div>

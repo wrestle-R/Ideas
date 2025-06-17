@@ -1,7 +1,6 @@
 "use client"
 import { SessionProvider } from "next-auth/react"
-import Navbar from "../../components/Navbar"
-import "../globals.css"
+import Navbar from "../../../components/Navbar"
 import React from "react"
 
 export default function RootLayout({ children }: React.PropsWithChildren) {

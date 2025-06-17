@@ -5,12 +5,8 @@ import React from "react"
 
 export default function RootLayout({ children }: React.PropsWithChildren) {
   return (
-    <html lang="en">
-      <body>
         <SessionProvider>
           {children}
         </SessionProvider>
-      </body>
-    </html>
   )
 }
