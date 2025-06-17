@@ -1,75 +1,78 @@
 import React from 'react'
-import Form from 'next/form'
 import { Search, Filter } from 'lucide-react'
 
-const SearchComponent = () => {
+interface SearchComponentProps {
+  searchQuery: string
+  onSearchChange: (query: string) => void
+  selectedCategory: string
+  onCategoryChange: (category: string) => void
+}
+
+const SearchComponent = ({ 
+  searchQuery, 
+  onSearchChange, 
+  selectedCategory, 
+  onCategoryChange 
+}: SearchComponentProps) => {
+  const categories = [
+    { label: 'AI & Tech', value: 'technology' },
+    { label: 'Health', value: 'health' },
+    { label: 'Lifestyle', value: 'other' },
+    { label: 'Business', value: 'business' },
+    { label: 'Creative', value: 'creative' },
+    { label: 'Education', value: 'education' },
+    { label: 'Entertainment', value: 'entertainment' }
+  ]
+
   return (
-    <div className="w-full max-w-2xl mx-auto mb-8">
-      <Form action="/search" className="relative" scroll={false}>
-        <div className="relative flex items-center">
-          {/* Search Input */}
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input 
-              type="text" 
-              name="q"
-              placeholder="Search for ideas, topics, or creators..."
-              className="w-full pl-12 pr-4 py-3.5 bg-gray-900/50 border border-gray-700/50 rounded-l-lg text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-600/50 focus:border-gray-600 transition-all duration-200 backdrop-blur-sm"
-            />
-          </div>
-          
-          {/* Filter Button */}
-          <button
-            type="button"
-            className="px-4 py-3.5 bg-gray-900/50 border-t border-r border-b border-gray-700/50 text-gray-400 hover:text-gray-300 hover:bg-gray-800/50 transition-all duration-200 backdrop-blur-sm"
-            title="Filters"
-          >
-            <Filter className="h-5 w-5" />
-          </button>
-          
-          {/* Search Button */}
-          <button 
-            type="submit"
-            className="px-6 py-3.5 bg-white hover:bg-gray-200 text-black font-semibold rounded-r-lg transition-all duration-200 shadow-lg flex items-center gap-2"
-          >
-            Search
-          </button>
+    <div className="w-full max-w-3xl mx-auto mb-10">
+      {/* Main Search Bar */}
+      <div className="relative flex items-center shadow-lg">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 z-10" />
+          <input 
+            type="text" 
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search for ideas, topics, or creators..."
+            className="w-full pl-12 pr-6 py-4 bg-gray-900/60 border border-gray-700/60 rounded-l-xl text-white text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/60 focus:border-gray-500/60 transition-all duration-300 backdrop-blur-md hover:bg-gray-900/70 focus:bg-gray-900/80"
+          />
         </div>
         
-        {/* Quick filters */}
-        <div className="flex flex-wrap gap-2 mt-3">
-          <button 
-            type="button"
-            className="px-3 py-1.5 text-xs font-medium bg-gray-900/30 text-gray-300 rounded-full border border-gray-800/50 hover:border-gray-600/50 hover:bg-gray-800/30 transition-all duration-200"
-          >
-            🤖 AI & Tech
-          </button>
-          <button 
-            type="button"
-            className="px-3 py-1.5 text-xs font-medium bg-gray-900/30 text-gray-300 rounded-full border border-gray-800/50 hover:border-gray-600/50 hover:bg-gray-800/30 transition-all duration-200"
-          >
-            🌱 Sustainability
-          </button>
-          <button 
-            type="button"
-            className="px-3 py-1.5 text-xs font-medium bg-gray-900/30 text-gray-300 rounded-full border border-gray-800/50 hover:border-gray-600/50 hover:bg-gray-800/30 transition-all duration-200"
-          >
-            🏠 Lifestyle
-          </button>
-          <button 
-            type="button"
-            className="px-3 py-1.5 text-xs font-medium bg-gray-900/30 text-gray-300 rounded-full border border-gray-800/50 hover:border-gray-600/50 hover:bg-gray-800/30 transition-all duration-200"
-          >
-            💼 Business
-          </button>
-          <button 
-            type="button"
-            className="px-3 py-1.5 text-xs font-medium bg-gray-900/30 text-gray-300 rounded-full border border-gray-800/50 hover:border-gray-600/50 hover:bg-gray-800/30 transition-all duration-200"
-          >
-            🎨 Creative
-          </button>
+        {/* Filter Toggle Button */}
+        <button
+          type="button"
+          onClick={() => onCategoryChange('')}
+          className={`px-5 py-4 bg-gray-900/60 border-t border-r border-b border-gray-700/60 text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 transition-all duration-300 backdrop-blur-md rounded-r-xl group ${
+            selectedCategory === '' ? 'bg-gray-800/80 text-gray-200' : ''
+          }`}
+          title="Clear all filters"
+        >
+          <Filter className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
+        </button>
+      </div>
+      
+      {/* Category Filters */}
+      <div className="mt-5">
+        <div className="flex flex-wrap gap-3 justify-center">
+          {categories.map((category) => (
+            <button 
+              key={category.value}
+              type="button"
+              onClick={() => onCategoryChange(selectedCategory === category.value ? '' : category.value)}
+              className={`px-4 py-2.5 text-sm font-medium rounded-full border transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+                selectedCategory === category.value
+                  ? 'bg-white/25 text-white border-white/50 shadow-lg shadow-white/10'
+                  : 'bg-gray-900/40 text-gray-300 border-gray-700/60 hover:border-gray-600/70 hover:bg-gray-800/50 hover:text-gray-200'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                {category.label}
+              </span>
+            </button>
+          ))}
         </div>
-      </Form>
+      </div>
     </div>
   )
 }

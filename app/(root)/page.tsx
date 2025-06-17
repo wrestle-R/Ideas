@@ -1,9 +1,11 @@
 "use client"
 import { useSession } from "next-auth/react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { getIdeas, getTotalIdeasCount } from "@/lib/sanity"
 import HeroSection from "@/components/HeroSection"
+import StatsSection from "@/components/StatsSection"
 import IdeaCard from "@/components/IdeaCard"
+import SearchComponent from "@/components/SearchCompoent"
 
 interface Idea {
   _id: string
@@ -27,53 +29,89 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [totalCount, setTotalCount] = useState(0)
   const [hasMore, setHasMore] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('')
   
   const ITEMS_PER_PAGE = 12
 
-  useEffect(() => {
-    async function fetchInitialData() {
-      try {
-        setLoading(true)
-        const [fetchedIdeas, total] = await Promise.all([
-          getIdeas(ITEMS_PER_PAGE, 0),
-          getTotalIdeasCount()
-        ])
-        
-        setIdeas(fetchedIdeas)
-        setTotalCount(total)
-        setHasMore(fetchedIdeas.length >= ITEMS_PER_PAGE && fetchedIdeas.length < total)
-      } catch (err) {
-        setError("Failed to load ideas. Please try again later.")
-        console.error("Error fetching ideas:", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchInitialData()
-  }, [])
-
-  const loadMoreIdeas = async () => {
+  const fetchIdeas = useCallback(async (isLoadMore = false) => {
     try {
-      setLoadingMore(true)
-      const newIdeas = await getIdeas(ITEMS_PER_PAGE, ideas.length)
+      if (isLoadMore) {
+        setLoadingMore(true)
+      } else {
+        setLoading(true)
+      }
       
-      setIdeas(prev => [...prev, ...newIdeas])
-      setHasMore(ideas.length + newIdeas.length < totalCount)
+      const offset = isLoadMore ? ideas.length : 0
+      const [fetchedIdeas, total] = await Promise.all([
+        getIdeas(ITEMS_PER_PAGE, offset, searchQuery, selectedCategory),
+        getTotalIdeasCount(searchQuery, selectedCategory)
+      ])
+      
+      if (isLoadMore) {
+        setIdeas(prev => [...prev, ...fetchedIdeas])
+      } else {
+        setIdeas(fetchedIdeas)
+      }
+      
+      setTotalCount(total)
+      setHasMore((isLoadMore ? ideas.length : 0) + fetchedIdeas.length < total)
     } catch (err) {
-      console.error("Error loading more ideas:", err)
+      setError("Failed to load ideas. Please try again later.")
+      console.error("Error fetching ideas:", err)
     } finally {
+      setLoading(false)
       setLoadingMore(false)
     }
+  }, [searchQuery, selectedCategory, ideas.length])
+
+  // Initial load
+  useEffect(() => {
+    fetchIdeas()
+  }, [])
+
+  // Search/filter change - reset to first page
+  useEffect(() => {
+    if (searchQuery !== '' || selectedCategory !== '') {
+      setIdeas([])
+      fetchIdeas()
+    }
+  }, [searchQuery, selectedCategory])
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query)
+  }
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category)
+  }
+
+  const loadMoreIdeas = async () => {
+    await fetchIdeas(true)
   }
 
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Hero Section */}
       <HeroSection />
+      
+      {/* Stats Section */}
+      <StatsSection />
+
+      {/* Search Section */}
+      <section className="container mx-auto px-6 py-6">
+        <SearchComponent 
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
+          selectedCategory={selectedCategory}
+          onCategoryChange={handleCategoryChange}
+        />
+      </section>
 
       {/* Ideas Grid */}
       <main className="container mx-auto px-6 pb-8">
+        
+
         {loading && (
           <div className="text-center py-12">
             <div className="inline-block w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
