@@ -143,7 +143,7 @@ export default function AuthorPage() {
   const githubUrl = getGithubUrl(author.id)
 
   return (
-    <div className="min-h-screen bg-black text-white pt-16">
+    <div className="min-h-screen bg-black text-white pt-1">
       <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800 opacity-50 -z-10"></div>
       
       <div className="relative z-0 py-8 px-4 sm:px-6 lg:px-8">

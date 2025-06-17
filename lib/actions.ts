@@ -138,3 +138,62 @@ export async function updateUserBio(bioId: string, newBio: string) {
     return { error: 'Failed to update bio. Please try again.' }
   }
 }
+
+export async function updateIdea(ideaId: string, formData: { title: string; description: string; category: string; notes: string }) {
+  try {
+    const { title, description, category, notes } = formData
+    
+    if (!title || !description) {
+      return { error: 'Title and description are required' }
+    }
+
+    const generateSlug = (title: string) => {
+      return title
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .trim()
+    }
+
+    const slug = generateSlug(title)
+    
+    const updateData = {
+      title,
+      slug: {
+        _type: 'slug',
+        current: slug
+      },
+      body: [
+        {
+          _type: 'block',
+          _key: 'description',
+          style: 'normal',
+          children: [
+            {
+              _type: 'span',
+              _key: 'span1',
+              text: description,
+              marks: []
+            }
+          ],
+          markDefs: []
+        }
+      ],
+      notes: notes || '',
+      category: category || 'other',
+      updatedAt: new Date().toISOString()
+    }
+
+    const result = await client
+      .patch(ideaId)
+      .set(updateData)
+      .commit()
+    
+    revalidatePath('/my-ideas')
+    return { success: true, idea: result }
+    
+  } catch (error) {
+    console.error('Error updating idea:', error)
+    return { error: 'Failed to update idea. Please try again.' }
+  }
+}

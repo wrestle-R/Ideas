@@ -71,7 +71,7 @@ export async function getIdeaById(id: string) {
   return await client.fetch(query)
 }
 
-export async function getIdeasByAuthor(authorId: string, limit: number = 12, offset: number = 0) {
+export async function getIdeasByAuthor(authorId: string, limit: number = 50, offset: number = 0) {
   const query = `*[_type == "idea" && author.id == "${authorId}"] | order(publishedAt desc) [${offset}...${offset + limit}] {
     _id,
     title,

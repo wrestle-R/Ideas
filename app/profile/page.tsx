@@ -3,6 +3,7 @@ import { useSession } from 'next-auth/react'
 import { User, Mail, Github, Edit, Plus } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { createUserBio, getUserBio, updateUserBio } from '../../lib/actions'
+import Navbar from '@/components/Navbar'
 
 const ProfilePage = () => {
   const { data: session, status } = useSession()
@@ -76,7 +77,10 @@ const ProfilePage = () => {
   }
 
   return (
+    <div className="">
+    <Navbar/>
     <div className="min-h-screen bg-black py-8">
+        
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-gray-900 border border-gray-800 rounded-lg shadow-lg overflow-hidden">
           {/* Header */}
@@ -144,13 +148,15 @@ const ProfilePage = () => {
             <div className="mt-8">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-white">Bio</h2>
-                <button
-                  onClick={() => setShowBioForm(true)}
-                  className="flex items-center space-x-2 bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Create Bio</span>
-                </button>
+                    {!existingBio && (
+                  <button
+                    onClick={() => setShowBioForm(true)}
+                    className="flex items-center space-x-2 bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Create Bio</span>
+                  </button>
+                )}
               </div>
 
               {showBioForm ? (
@@ -207,6 +213,8 @@ const ProfilePage = () => {
         </div>
       </div>
     </div>
+    </div>
+    
   )
 }
 
