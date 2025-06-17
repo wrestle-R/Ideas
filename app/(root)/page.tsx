@@ -8,8 +8,10 @@ import {
   Heart,
   MessageCircle,
   Lightbulb,
-  Sparkles
+  Sparkles,
+  Search
 } from "lucide-react"
+import SearchComponent from "@/components/SearchCompoent"
 
 export default function Home() {
   const { data: session } = useSession()
@@ -99,6 +101,8 @@ export default function Home() {
       A simple place to share and discover brilliant ideas from creative minds around the world. 
       Turn your thoughts into inspiration for others.
     </p>
+
+    <SearchComponent/>
 
     {/* Stats */}
     <div className="flex justify-center items-center gap-6 mb-6 text-sm">

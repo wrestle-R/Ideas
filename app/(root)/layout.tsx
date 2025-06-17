@@ -1,6 +1,6 @@
 "use client"
 import { SessionProvider } from "next-auth/react"
-import Navbar from "../components/Navbar"
+import Navbar from "../../components/Navbar"
 import "../globals.css"
 import React from "react"
 

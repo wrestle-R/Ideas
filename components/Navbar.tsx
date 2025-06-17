@@ -21,7 +21,6 @@ export default function Navbar() {
               <div className="flex items-center space-x-4">
                 <span className="text-gray-300">
                   Welcome, {session.user?.name || session.user?.email}
-                  {console.log(session.user)}
                 </span>
                 <button
                   onClick={() => signOut()}
