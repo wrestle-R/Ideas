@@ -68,7 +68,12 @@ export default function IdeaCard({ idea }: IdeaCardProps) {
       {/* Author and Date */}
       <div className="flex items-center gap-2 mb-4 text-sm text-white">
         <User className="h-4 w-4" />
-        <span>{idea.author?.name || "Anonymous"}</span>
+        <Link 
+          href={`/idea/author/${idea.author?.id}`}
+          className="hover:text-blue-400 transition-colors cursor-pointer"
+        >
+          {idea.author?.name || "Anonymous"}
+        </Link>
         <span>•</span>
         <Calendar className="h-3 w-3" />
         <span>{formatDate(idea.publishedAt)}</span>

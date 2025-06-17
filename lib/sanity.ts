@@ -70,3 +70,32 @@ export async function getIdeaById(id: string) {
   
   return await client.fetch(query)
 }
+
+export async function getIdeasByAuthor(authorId: string, limit: number = 12, offset: number = 0) {
+  const query = `*[_type == "idea" && author.id == "${authorId}"] | order(publishedAt desc) [${offset}...${offset + limit}] {
+    _id,
+    title,
+    slug,
+    category,
+    notes,
+    publishedAt,
+    author,
+    "text": body[0].children[0].text
+  }`
+  
+  return await client.fetch(query)
+}
+
+export async function getAuthorIdeasCount(authorId: string) {
+  const query = `count(*[_type == "idea" && author.id == "${authorId}"])`
+  return await client.fetch(query)
+}
+
+export async function getAuthorInfo(authorId: string) {
+  const query = `*[_type == "idea" && author.id == "${authorId}"][0] {
+    author
+  }`
+  
+  const result = await client.fetch(query)
+  return result?.author || null
+}

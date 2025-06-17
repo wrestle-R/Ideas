@@ -164,7 +164,12 @@ export default function IdeaPage() {
             <div className="flex items-center gap-4 mb-8 pb-6 border-b border-gray-700">
               <div className="flex items-center gap-2 text-gray-300">
                 <User className="h-5 w-5" />
-                <span className="font-medium">{idea.author?.name || "Anonymous"}</span>
+                <Link 
+                  href={`/idea/author/${idea.author?.id}`}
+                  className="font-medium hover:text-blue-400 transition-colors cursor-pointer"
+                >
+                  {idea.author?.name || "Anonymous"}
+                </Link>
               </div>
               <div className="flex items-center gap-2 text-gray-300">
                 <Calendar className="h-5 w-5" />

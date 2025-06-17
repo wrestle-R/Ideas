@@ -1,6 +1,7 @@
 "use client"
 import { useSession, signIn } from "next-auth/react"
-import { Sparkles, Lightbulb } from "lucide-react"
+import { Sparkles, Lightbulb, Plus } from "lucide-react"
+import Link from "next/link"
 
 export default function HeroSection() {
   const { data: session } = useSession()
@@ -27,8 +28,8 @@ export default function HeroSection() {
           A simple place to share and discover brilliant ideas from creative minds around the world.
         </p>
 
-        {/* CTA */}
-        {!session && (
+        {/* CTA Button - Conditional based on auth status */}
+        {!session ? (
           <button 
             onClick={() => signIn()}
             className="bg-white hover:bg-black hover:text-white text-black font-semibold py-2.5 px-6 rounded-lg transition-all duration-200 shadow-lg flex items-center gap-2 mx-auto border border-white hover:border-white"
@@ -36,6 +37,14 @@ export default function HeroSection() {
             <Lightbulb className="h-4 w-4" />
             Start Sharing Ideas
           </button>
+        ) : (
+          <Link 
+            href="/idea/create"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-all duration-200 shadow-lg flex items-center gap-2 mx-auto transform hover:scale-105"
+          >
+            <Plus className="h-4 w-4" />
+            Create New Idea
+          </Link>
         )}
       </div>
     </section>

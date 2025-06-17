@@ -29,12 +29,6 @@ export default function Navbar() {
                   Welcome, {session.user?.name || session.user?.email}
                 </span>
                 <button
-                  onClick={() => router.push("/idea/create")}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-                >
-                  Create Idea
-                </button>
-                <button
                   onClick={() => signOut()}
                   className="bg-white hover:bg-gray-200 text-black font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
                 >
