@@ -2,7 +2,9 @@ import { type SchemaTypeDefinition } from 'sanity'
 
 import {ideaType} from './ideaType'
 import {bioType} from './bioType'
+import commentType from './commentType'
 
 export const schema: { types: SchemaTypeDefinition[] } = {
-  types: [ ideaType, bioType ]
+  types: [ ideaType, bioType, commentType ]
 }
+

@@ -30,7 +30,9 @@ export async function getIdeas(limit: number = 12, offset: number = 0, searchQue
     notes,
     publishedAt,
     author,
-    "text": body[0].children[0].text
+    "text": body[0].children[0].text,
+    "likesCount": count(*[_type == "like" && ideaId == ^._id]),
+    "commentsCount": count(*[_type == "comment" && ideaId == ^._id])
   }`
   
   return await client.fetch(query)
@@ -103,4 +105,96 @@ export async function getAuthorInfo(authorId: string) {
 export async function getUserBio(authorId: string) {
   const query = `*[_type == "bio" && author.id == "${authorId}"][0]`
   return await client.fetch(query)
+}
+
+export async function getLikesForIdea(ideaId: string) {
+  const query = `*[_type == "like" && ideaId == "${ideaId}"] | order(createdAt desc) {
+    _id,
+    author,
+    createdAt
+  }`
+  
+  return await client.fetch(query)
+}
+
+export async function getCommentsForIdea(ideaId: string) {
+  const query = `*[_type == "comment" && ideaId == "${ideaId}"] | order(createdAt desc) {
+    _id,
+    text,
+    author,
+    createdAt
+  }`
+  
+  return await client.fetch(query)
+}
+
+export async function checkUserLiked(ideaId: string, authorId: string) {
+  const query = `*[_type == "like" && ideaId == "${ideaId}" && author.id == "${authorId}"][0]`
+  const result = await client.fetch(query)
+  return !!result
+}
+
+export async function getLikeCount(ideaId: string) {
+  const query = `count(*[_type == "like" && ideaId == "${ideaId}"])`
+  return await client.fetch(query)
+}
+
+export async function getCommentCount(ideaId: string) {
+  const query = `count(*[_type == "comment" && ideaId == "${ideaId}"])`
+  return await client.fetch(query)
+}
+
+export async function getEngagementCounts(ideaIds: string[]) {
+  if (ideaIds.length === 0) return []
+  
+  const query = `*[_type == "idea" && _id in [${ideaIds.map(id => `"${id}"`).join(', ')}]] {
+    _id,
+    "likesCount": count(*[_type == "like" && ideaId == ^._id]),
+    "commentsCount": count(*[_type == "comment" && ideaId == ^._id])
+  }`
+  
+  return await client.fetch(query)
+}
+
+export async function getIdeasWithUserLikes(limit: number = 12, offset: number = 0, searchQuery?: string, category?: string, userId?: string) {
+  let filterConditions = ['_type == "idea"']
+  
+  // Add search condition
+  if (searchQuery && searchQuery.trim()) {
+    filterConditions.push(`(title match "*${searchQuery}*" || body[].children[].text match "*${searchQuery}*" || author.name match "*${searchQuery}*")`)
+  }
+  
+  // Add category condition
+  if (category && category.trim()) {
+    filterConditions.push(`category == "${category}"`)
+  }
+  
+  const filter = filterConditions.join(' && ')
+  
+  const query = `*[${filter}] | order(publishedAt desc) [${offset}...${offset + limit}] {
+    _id,
+    title,
+    slug,
+    category,
+    notes,
+    publishedAt,
+    author,
+    "text": body[0].children[0].text,
+    "likesCount": count(*[_type == "like" && ideaId == ^._id]),
+    "commentsCount": count(*[_type == "comment" && ideaId == ^._id]),
+    "userLiked": ${userId ? `count(*[_type == "like" && ideaId == ^._id && author.id == "${userId}"]) > 0` : 'false'}
+  }`
+  
+  return await client.fetch(query)
+}
+
+export async function checkMultipleUserLikes(ideaIds: string[], userId: string) {
+  if (ideaIds.length === 0 || !userId) return []
+  
+  const query = `*[_type == "like" && ideaId in [${ideaIds.map(id => `"${id}"`).join(', ')}] && author.id == "${userId}"] {
+    ideaId
+  }`
+  
+  const likes = await client.fetch(query)
+  return likes.map((like: any) => like.ideaId)
 }

@@ -11,6 +11,35 @@ const client = createClient({
   apiVersion: '2025-06-17'
 })
 
+async function fetchGitHubUserName(githubId: string): Promise<string | null> {
+  try {
+    if (githubId === 'anonymous') return null
+    
+    if (githubId.includes('@')) {
+      return githubId.split('@')[0]
+    }
+    
+    const response = await fetch(`https://api.github.com/user/${githubId}`, {
+      headers: {
+        'User-Agent': 'Ideas-App',
+        ...(process.env.GITHUB_TOKEN && {
+          'Authorization': `token ${process.env.GITHUB_TOKEN}`
+        })
+      }
+    })
+    
+    if (response.ok) {
+      const userData = await response.json()
+      return userData.name || userData.login || null
+    }
+    
+    return null
+  } catch (error) {
+    console.error('Error fetching GitHub user:', error)
+    return null
+  }
+}
+
 export async function createIdea(formData: FormData) {
   try {
     const title = formData.get('title') as string
@@ -195,5 +224,85 @@ export async function updateIdea(ideaId: string, formData: { title: string; desc
   } catch (error) {
     console.error('Error updating idea:', error)
     return { error: 'Failed to update idea. Please try again.' }
+  }
+}
+
+export async function toggleLike(ideaId: string, authorId: string, authorName: string) {
+  try {
+    if (!ideaId || !authorId) {
+      return { error: 'Invalid parameters' }
+    }
+
+    // Check if user already liked this idea
+    const existingLike = await client.fetch(
+      `*[_type == "like" && ideaId == "${ideaId}" && author.id == "${authorId}"][0]`
+    )
+
+    if (existingLike) {
+      // Unlike - delete the like
+      await client.delete(existingLike._id)
+      revalidatePath(`/idea/${ideaId}`)
+      revalidatePath('/') // Refresh home page
+      return { success: true, action: 'unliked' }
+    } else {
+      // Like - create new like
+      const newLike = {
+        _type: 'like',
+        ideaId,
+        author: {
+          id: authorId,
+          name: authorName
+        },
+        createdAt: new Date().toISOString()
+      }
+
+      const result = await client.create(newLike)
+      revalidatePath(`/idea/${ideaId}`)
+      revalidatePath('/') // Refresh home page
+      return { success: true, action: 'liked', like: result }
+    }
+  } catch (error) {
+    console.error('Error toggling like:', error)
+    return { error: 'Failed to update like. Please try again.' }
+  }
+}
+
+export async function addComment(ideaId: string, text: string, authorId: string, providedAuthorName?: string) {
+  try {
+    if (!text.trim()) {
+      return { error: 'Comment text is required' }
+    }
+
+    let authorName = 'Anonymous'
+    
+    // If user provided a name (from session), use it
+    // Otherwise try to fetch from GitHub API
+    if (providedAuthorName && providedAuthorName !== 'Anonymous') {
+      authorName = providedAuthorName
+    } else if (authorId !== 'anonymous') {
+      // Try to fetch the real name from GitHub
+      const githubName = await fetchGitHubUserName(authorId)
+      if (githubName) {
+        authorName = githubName
+      }
+    }
+
+    const newComment = {
+      _type: 'comment',
+      ideaId,
+      text: text.trim(),
+      author: {
+        id: authorId,
+        name: authorName
+      },
+      createdAt: new Date().toISOString()
+    }
+
+    const result = await client.create(newComment)
+    revalidatePath(`/idea/${ideaId}`)
+    return { success: true, comment: result }
+  } catch (error) {
+    console.error('Error adding comment:', error)
+    return { error: 'Failed to add comment. Please try again.' }
   }
 }

@@ -1,6 +1,8 @@
 "use client"
 import { Calendar, User, Heart, MessageCircle } from "lucide-react"
 import Link from "next/link"
+import { useState } from "react"
+import { toggleLike } from "@/lib/actions"
 
 interface IdeaCardProps {
   idea: {
@@ -15,10 +17,22 @@ interface IdeaCardProps {
       name: string
     }
     text?: string
+    likesCount?: number
+    commentsCount?: number
+    userLiked?: boolean
   }
+  currentUser?: {
+    id: string
+    name: string
+  }
+  onLikeUpdate?: (ideaId: string, newLikeCount: number, userLiked: boolean) => void
 }
 
-export default function IdeaCard({ idea }: IdeaCardProps) {
+export default function IdeaCard({ idea, currentUser, onLikeUpdate }: IdeaCardProps) {
+  const [isLiking, setIsLiking] = useState(false)
+  const [localLiked, setLocalLiked] = useState(idea.userLiked || false)
+  const [localLikeCount, setLocalLikeCount] = useState(idea.likesCount || 0)
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -44,60 +58,100 @@ export default function IdeaCard({ idea }: IdeaCardProps) {
     return colors[category] || colors.other
   }
 
-  return (
-    <div className="bg-black/50 border border-white/30 rounded-lg p-6 hover:border-white/50 transition-all duration-200 hover:shadow-lg hover:shadow-white/10 group backdrop-blur-sm cursor-pointer">
-      {/* Category Badge */}
-      {idea.category && (
-        <div className={`inline-block px-2 py-1 text-xs rounded-full border mb-3 ${getCategoryColor(idea.category)}`}>
-          {idea.category.charAt(0).toUpperCase() + idea.category.slice(1)}
-        </div>
-      )}
-
-      {/* Idea Title */}
-      <h3 className="text-xl font-semibold text-white mb-3 group-hover:text-white transition-colors line-clamp-2">
-        <Link href={`/idea/${idea._id}`}>
-          {idea.title}
-        </Link>
-      </h3>
+  const handleLikeClick = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!currentUser || isLiking) return
+    
+    setIsLiking(true)
+    
+    // Store previous values for potential rollback
+    const prevLiked = localLiked
+    const prevCount = localLikeCount
+    
+    // Optimistic update
+    const newLiked = !localLiked
+    const newCount = newLiked ? localLikeCount + 1 : Math.max(0, localLikeCount - 1)
+    setLocalLiked(newLiked)
+    setLocalLikeCount(newCount)
+    
+    try {
+      const result = await toggleLike(idea._id, currentUser.id, currentUser.name)
       
-      {/* Idea Description */}
-      <p className="text-white mb-4 line-clamp-3 text-sm leading-relaxed">
-        {idea.text || "No description available"}
-      </p>
+      if (result.success) {
+        // Update was successful, keep optimistic update
+        onLikeUpdate?.(idea._id, newCount, newLiked)
+      } else {
+        // Revert optimistic update on error
+        setLocalLiked(prevLiked)
+        setLocalLikeCount(prevCount)
+        console.error('Error toggling like:', result.error)
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setLocalLiked(prevLiked)
+      setLocalLikeCount(prevCount)
+      console.error('Error toggling like:', error)
+    } finally {
+      setIsLiking(false)
+    }
+  }
 
-      {/* Author and Date */}
-      <div className="flex items-center gap-2 mb-4 text-sm text-white">
-        <User className="h-4 w-4" />
-        <Link 
-          href={`/idea/author/${idea.author?.id}`}
-          className="hover:text-blue-400 transition-colors cursor-pointer"
-        >
-          {idea.author?.name || "Anonymous"}
-        </Link>
-        <span>•</span>
-        <Calendar className="h-3 w-3" />
-        <span>{formatDate(idea.publishedAt)}</span>
-      </div>
+  return (
+    <Link href={`/idea/${idea._id}`}>
+      <div className="bg-black/50 border border-white/30 rounded-lg p-6 hover:border-white/50 transition-all duration-200 hover:shadow-lg hover:shadow-white/10 group backdrop-blur-sm cursor-pointer">
+        {/* Category Badge */}
+        {idea.category && (
+          <div className={`inline-block px-2 py-1 text-xs rounded-full border mb-3 ${getCategoryColor(idea.category)}`}>
+            {idea.category.charAt(0).toUpperCase() + idea.category.slice(1)}
+          </div>
+        )}
 
-      {/* Engagement Stats */}
-      <div className="flex items-center justify-between pt-4 border-t border-white/30">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1 text-white hover:text-white transition-colors cursor-pointer">
-            <Heart className="h-4 w-4" />
-            <span className="text-sm">0</span>
-          </div>
-          <div className="flex items-center gap-1 text-white hover:text-white transition-colors cursor-pointer">
-            <MessageCircle className="h-4 w-4" />
-            <span className="text-sm">0</span>
-          </div>
+        {/* Idea Title */}
+        <h3 className="text-xl font-semibold text-white mb-3 group-hover:text-white transition-colors line-clamp-2">
+          {idea.title}
+        </h3>
+        
+        {/* Idea Description */}
+        <p className="text-white mb-4 line-clamp-3 text-sm leading-relaxed">
+          {idea.text || "No description available"}
+        </p>
+
+        {/* Author and Date */}
+        <div className="flex items-center gap-2 mb-4 text-sm text-white">
+          <User className="h-4 w-4" />
+          <span 
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+            className="hover:text-blue-400 transition-colors cursor-pointer"
+          >
+            {idea.author?.name || "Anonymous"}
+          </span>
+          <span>•</span>
+          <Calendar className="h-3 w-3" />
+          <span>{formatDate(idea.publishedAt)}</span>
         </div>
-        <Link 
-          href={`/idea/${idea._id}`}
-          className="text-white hover:text-white text-sm font-medium transition-colors"
-        >
-          View →
-        </Link>
+
+        {/* Engagement Stats */}
+        <div className="flex items-center justify-between pt-4 border-t border-white/30">
+          <div className="flex items-center gap-4">
+            
+              
+              
+            
+            <div className="flex items-center gap-1 text-white hover:text-blue-400 transition-colors cursor-pointer">
+              <MessageCircle className="h-4 w-4" />
+              <span className="text-sm">{idea.commentsCount ?? 0}</span>
+            </div>
+          </div>
+          <span className="text-white hover:text-white text-sm font-medium transition-colors">
+            View →
+          </span>
+        </div>
       </div>
-    </div>
+    </Link>
   )
 }
