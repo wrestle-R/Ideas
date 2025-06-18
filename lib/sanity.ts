@@ -117,6 +117,18 @@ export async function getLikesForIdea(ideaId: string) {
   return await client.fetch(query)
 }
 
+// Fetch all comments for an idea, sorted oldest first (for full history)
+export async function getAllCommentsForIdea(ideaId: string) {
+  const query = `*[_type == "comment" && ideaId == "${ideaId}"] | order(createdAt asc) {
+    _id,
+    text,
+    author,
+    createdAt
+  }`
+  return await client.fetch(query)
+}
+
+// Existing function (kept for compatibility, but sorts newest first)
 export async function getCommentsForIdea(ideaId: string) {
   const query = `*[_type == "comment" && ideaId == "${ideaId}"] | order(createdAt desc) {
     _id,

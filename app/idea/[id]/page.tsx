@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { getIdeaById, getCommentsForIdea } from '@/lib/sanity'
+import { getIdeaById, getCommentsForIdea, getAllCommentsForIdea } from '@/lib/sanity'
 import { addComment } from '@/lib/actions'
 import { Calendar, User, MessageCircle, ArrowLeft, Send } from 'lucide-react'
 import Link from 'next/link'
@@ -41,7 +41,7 @@ export default function IdeaPage() {
   const params = useParams()
   const { data: session, status } = useSession()
   const [idea, setIdea] = useState<Idea | null>(null)
-  const [comments, setComments] = useState<OptimisticComment[]>([])
+  const [comments, setComments] = useState<Comment[]>([])
   const [showComments, setShowComments] = useState(false)
   const [newComment, setNewComment] = useState('')
   const [loading, setLoading] = useState(true)
@@ -55,46 +55,31 @@ export default function IdeaPage() {
     name: session.user.name || 'Anonymous'
   } : null
 
+  // Fetch all comments for the idea from backend
+  const fetchComments = async (ideaId: string) => {
+    try {
+      const commentsData = await getAllCommentsForIdea(ideaId)
+      setComments(commentsData || [])
+    } catch (err) {
+      setComments([])
+    }
+  }
+
+  // Fetch idea and comments (for initial load)
   const fetchAllData = async (ideaId: string, setLoadingState: boolean = true) => {
     if (setLoadingState) setLoading(true)
     try {
-      const [fetchedIdea, commentsData] = await Promise.all([
-        getIdeaById(ideaId),
-        getCommentsForIdea(ideaId)
-      ])
-      
+      const fetchedIdea = await getIdeaById(ideaId)
       if (!fetchedIdea) {
         setError("Idea not found")
         if (setLoadingState) setLoading(false)
         return false
       }
-      
       setIdea(fetchedIdea)
-      
-      // Process comments - ensure proper sorting and remove duplicates
-      const backendComments = (commentsData || []) as Comment[]
-      
-      setComments(prevComments => {
-        // Get optimistic comments that haven't been persisted yet
-        const optimisticComments = prevComments.filter(c => 
-          c.isOptimistic && !backendComments.some(b => 
-            b.text === c.text && 
-            b.author.id === c.author.id &&
-            Math.abs(new Date(b.createdAt).getTime() - new Date(c.createdAt).getTime()) < 60000
-          )
-        )
-        
-        // Combine and sort all comments by createdAt (newest first)
-        const allComments = [...optimisticComments, ...backendComments]
-        return allComments.sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
-      })
-      
+      await fetchComments(ideaId)
       if (setLoadingState) setLoading(false)
       return true
     } catch (err) {
-      console.error("Error fetching data:", err)
       setError("Failed to load idea. Please try again later.")
       if (setLoadingState) setLoading(false)
       return false
@@ -119,6 +104,14 @@ export default function IdeaPage() {
     fetchData()
   }, [params])
 
+  // Fetch comments when comments section is opened
+  useEffect(() => {
+    if (showComments && idea?._id) {
+      fetchComments(idea._id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showComments])
+
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -130,31 +123,16 @@ export default function IdeaPage() {
     const authorId = currentUser?.id || 'anonymous'
     const authorName = currentUser?.name || 'Anonymous'
     const commentText = newComment.trim()
-    const optimisticId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-
-    const optimisticComment: OptimisticComment = {
-      _id: optimisticId,
-      text: commentText,
-      author: {
-        id: authorId,
-        name: authorName
-      },
-      createdAt: new Date().toISOString(),
-      isOptimistic: true
-    }
-
-    // Add optimistic comment to the top of the list
-    setComments(prevComments => [optimisticComment, ...prevComments])
     setNewComment('')
 
     try {
       await addComment(idea._id, commentText, authorId, authorName)
-      // Fetch comments in background, do not set loading state
-      fetchAllData(idea._id, false)
+      // Always fetch all comments and idea after posting
+      await Promise.all([
+        fetchComments(idea._id),
+        fetchAllData(idea._id, false)
+      ])
     } catch (error) {
-      console.error('Error saving comment:', error)
-      // Remove the optimistic comment on error
-      setComments(prevComments => prevComments.filter(c => c._id !== optimisticId))
       setError('Failed to save comment. Please try again.')
     } finally {
       setSubmittingComment(false)
@@ -531,9 +509,7 @@ export default function IdeaPage() {
                         comments.map((comment, index) => (
                           <motion.div 
                             key={comment._id} 
-                            className={`bg-gray-800/50 border border-gray-600 rounded-lg p-4 ${
-                              comment.isOptimistic ? 'opacity-75' : ''
-                            }`}
+                            className="bg-gray-800/50 border border-gray-600 rounded-lg p-4"
                             variants={commentVariants}
                             initial="initial"
                             animate="animate"
@@ -566,16 +542,6 @@ export default function IdeaPage() {
                                   transition={{ delay: 0.3 }}
                                 >
                                   Anonymous
-                                </motion.span>
-                              )}
-                              {comment.isOptimistic && (
-                                <motion.span 
-                                  className="text-yellow-400 text-xs bg-yellow-500/20 border border-yellow-500/30 px-2 py-1 rounded"
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  transition={{ delay: 0.3 }}
-                                >
-                                  Posting...
                                 </motion.span>
                               )}
                               <span className="text-gray-400 text-sm">
