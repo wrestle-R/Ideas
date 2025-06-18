@@ -70,23 +70,22 @@ export default function MyIdeasPage() {
 
   return (
     <div className="min-h-screen bg-black text-white pt-3">
-      <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800 opacity-50 -z-10"></div>
+      <div className="fixed inset-0 bg-gradient-to-br from-black via-gray-900 to-gray-800 opacity-60 -z-10"></div>
       
     <div className="relative z-0 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-4">
+        <h1 className="text-4xl font-bold text-white mb-4">
           My Ideas
         </h1>
         <p className="text-gray-400 text-lg mb-8">
           Manage and edit your creative concepts
         </p>
         <div className="flex flex-wrap justify-center gap-4">
-          
           <Link 
             href="/idea/create"
-            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            className="inline-flex items-center px-6 py-3 border border-gray-700 text-gray-300 bg-black/60 rounded-xl hover:bg-gray-900 hover:text-white transition-all duration-300 font-medium shadow hover:shadow-lg"
           >
             ✨ Create New Idea
           </Link>
@@ -94,8 +93,8 @@ export default function MyIdeasPage() {
         </div>
 
           {error && (
-            <div className="bg-red-900/50 border border-red-700 rounded-xl p-4 mb-8">
-              <p className="text-red-200">{error}</p>
+            <div className="bg-gray-900/60 border border-gray-700 rounded-xl p-4 mb-8">
+              <p className="text-gray-300">{error}</p>
             </div>
           )}
 
@@ -106,7 +105,7 @@ export default function MyIdeasPage() {
               <p className="text-gray-400 mb-8">Start creating your first idea to see it here!</p>
               <Link 
                 href="/idea/create"
-                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium"
+                className="inline-flex items-center px-6 py-3 border border-gray-700 text-gray-300 bg-black/60 rounded-xl hover:bg-gray-900 hover:text-white transition-all duration-300 font-medium"
               >
                 Create Your First Idea
               </Link>
@@ -114,14 +113,14 @@ export default function MyIdeasPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {ideas.map((idea) => (
-                <div key={idea._id} className="bg-gray-900/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-6 hover:border-gray-600 transition-all duration-300 group">
+                <div key={idea._id} className="bg-black/70 backdrop-blur-sm border border-gray-700 rounded-2xl p-6 hover:border-gray-500 transition-all duration-300 group">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-gray-200 transition-colors">
                         {idea.title}
                       </h3>
                       {idea.category && (
-                        <span className="inline-block px-3 py-1 bg-blue-600/20 text-blue-300 text-xs rounded-full border border-blue-600/30">
+                        <span className="inline-block px-3 py-1 bg-gray-800/60 text-gray-400 text-xs rounded-full border border-gray-700">
                           {idea.category}
                         </span>
                       )}
@@ -144,7 +143,7 @@ export default function MyIdeasPage() {
                     </span>
                     <Link
                       href={`/my-ideas/edit?id=${idea._id}`}
-                      className="inline-flex items-center px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg transition-all duration-300 border border-gray-600 hover:border-gray-500"
+                      className="inline-flex items-center px-4 py-2 border border-gray-700 bg-black/60 hover:bg-gray-900 text-gray-300 hover:text-white text-sm rounded-lg transition-all duration-300"
                     >
                       ✏️ Edit
                     </Link>
