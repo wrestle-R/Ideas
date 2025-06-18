@@ -100,7 +100,7 @@ export default function IdeaCard({ idea, currentUser, onLikeUpdate }: IdeaCardPr
 
   return (
     <Link href={`/idea/${idea._id}`}>
-      <div className="bg-black/50 border border-white/30 rounded-lg p-6 hover:border-white/50 transition-all duration-200 hover:shadow-lg hover:shadow-white/10 group backdrop-blur-sm cursor-pointer w-[320px] h-[240px]">
+      <div className="bg-black/50 border border-white/30 rounded-lg p-6 hover:border-white/50 transition-all duration-200 hover:shadow-lg hover:shadow-white/10 group backdrop-blur-sm cursor-pointer w-[320px] h-[240px] flex flex-col justify-between min-h-0">
         {/* Category Badge */}
         {idea.category && (
           <div className={`inline-block px-2 py-1 text-xs rounded-full border mb-3 ${getCategoryColor(idea.category)}`}>
@@ -114,7 +114,7 @@ export default function IdeaCard({ idea, currentUser, onLikeUpdate }: IdeaCardPr
         </h3>
         
         {/* Idea Description */}
-        <p className="text-white mb-4 line-clamp-3 text-sm leading-relaxed">
+        <p className="text-white mb-4 line-clamp-3 text-sm leading-relaxed overflow-hidden text-ellipsis">
           {idea.text || "No description available"}
         </p>
 
