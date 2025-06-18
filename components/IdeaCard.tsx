@@ -100,7 +100,7 @@ export default function IdeaCard({ idea, currentUser, onLikeUpdate }: IdeaCardPr
 
   return (
     <Link href={`/idea/${idea._id}`}>
-      <div className="bg-black/50 border border-white/30 rounded-lg p-6 hover:border-white/50 transition-all duration-200 hover:shadow-lg hover:shadow-white/10 group backdrop-blur-sm cursor-pointer">
+      <div className="bg-black/50 border border-white/30 rounded-lg p-6 hover:border-white/50 transition-all duration-200 hover:shadow-lg hover:shadow-white/10 group backdrop-blur-sm cursor-pointer w-[320px] h-[240px]">
         {/* Category Badge */}
         {idea.category && (
           <div className={`inline-block px-2 py-1 text-xs rounded-full border mb-3 ${getCategoryColor(idea.category)}`}>
