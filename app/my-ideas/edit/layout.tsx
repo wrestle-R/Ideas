@@ -1,7 +1,7 @@
 "use client"
 import { SessionProvider } from "next-auth/react"
 import Navbar from "../../../components/Navbar"
-import React from "react"
+import React, { Suspense } from "react"
 
 export default function CreateIdeaLayout({ children }: React.PropsWithChildren) {
   return (
@@ -11,7 +11,9 @@ export default function CreateIdeaLayout({ children }: React.PropsWithChildren) 
           <Navbar />
         </div>
         <main className="relative z-10">
-          {children}
+          <Suspense fallback={<div className="text-white p-8">Loading...</div>}>
+            {children}
+          </Suspense>
         </main>
       </div>
     </SessionProvider>
