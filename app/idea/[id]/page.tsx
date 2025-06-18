@@ -55,7 +55,8 @@ export default function IdeaPage() {
     name: session.user.name || 'Anonymous'
   } : null
 
-  const fetchAllData = async (ideaId: string) => {
+  const fetchAllData = async (ideaId: string, setLoadingState: boolean = true) => {
+    if (setLoadingState) setLoading(true)
     try {
       const [fetchedIdea, commentsData] = await Promise.all([
         getIdeaById(ideaId),
@@ -64,6 +65,7 @@ export default function IdeaPage() {
       
       if (!fetchedIdea) {
         setError("Idea not found")
+        if (setLoadingState) setLoading(false)
         return false
       }
       
@@ -89,17 +91,18 @@ export default function IdeaPage() {
         )
       })
       
+      if (setLoadingState) setLoading(false)
       return true
     } catch (err) {
       console.error("Error fetching data:", err)
       setError("Failed to load idea. Please try again later.")
+      if (setLoadingState) setLoading(false)
       return false
     }
   }
 
   useEffect(() => {
     async function fetchData() {
-      setLoading(true)
       setError(null)
       
       if (!params?.id) {
@@ -109,7 +112,7 @@ export default function IdeaPage() {
       }
       
       const id = Array.isArray(params.id) ? params.id[0] : params.id
-      await fetchAllData(id)
+      await fetchAllData(id, true)
       setLoading(false)
     }
 
@@ -146,8 +149,8 @@ export default function IdeaPage() {
 
     try {
       await addComment(idea._id, commentText, authorId, authorName)
-      // Immediately fetch all comments after posting
-      await fetchAllData(idea._id)
+      // Fetch comments in background, do not set loading state
+      fetchAllData(idea._id, false)
     } catch (error) {
       console.error('Error saving comment:', error)
       // Remove the optimistic comment on error
