@@ -32,7 +32,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   
-  const ITEMS_PER_PAGE = 12
+  const ITEMS_PER_PAGE =24
 
   const fetchIdeas = useCallback(async (isLoadMore = false) => {
     try {
@@ -143,7 +143,7 @@ export default function Home() {
 
         {!loading && !error && ideas.length > 0 && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {ideas.map((idea) => (
                 <IdeaCard key={idea._id} idea={idea} />
               ))}
