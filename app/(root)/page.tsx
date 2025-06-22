@@ -6,6 +6,7 @@ import HeroSection from "@/components/HeroSection"
 import StatsSection from "@/components/StatsSection"
 import IdeaCard from "@/components/IdeaCard"
 import SearchComponent from "@/components/SearchCompoent"
+import { useRouter } from "next/navigation"
 
 interface Idea {
   _id: string
@@ -22,7 +23,8 @@ interface Idea {
 }
 
 export default function Home() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -74,13 +76,18 @@ export default function Home() {
     fetchIdeas()
   }, [])
 
-  // Search/filter change - reset to first page
+  // Always fetch ideas when searchQuery or selectedCategory changes (including when both are empty)
   useEffect(() => {
-    if (searchQuery !== '' || selectedCategory !== '') {
-      setIdeas([])
-      fetchIdeas()
-    }
+    setIdeas([])
+    fetchIdeas()
   }, [searchQuery, selectedCategory])
+
+  useEffect(() => {
+    // If you want to protect this page:
+    // if (status === "unauthenticated") {
+    //   router.replace("/api/auth/signin")
+    // }
+  }, [status, router])
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query)
@@ -143,7 +150,7 @@ export default function Home() {
 
         {!loading && !error && ideas.length > 0 && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {ideas.map((idea) => (
                 <IdeaCard key={idea._id} idea={idea} />
               ))}

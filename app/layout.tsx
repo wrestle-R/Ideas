@@ -1,16 +1,22 @@
-"use client"
-import { SessionProvider } from "next-auth/react"
-import React from "react"
-import "./globals.css"
+import "./globals.css";
+import SessionWrapper from "./session-provider";
+import type { Metadata } from "next";
 
-export default function RootLayout({ children }: React.PropsWithChildren) {
+export const metadata: Metadata = {
+  title: "Ideas",
+  icons: {
+    icon: "/icon_no_bg.png",
+  },
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <SessionProvider>
+        <SessionWrapper>
           {children}
-        </SessionProvider>
+        </SessionWrapper>
       </body>
     </html>
-  )
+  );
 }

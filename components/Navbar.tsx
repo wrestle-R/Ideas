@@ -2,7 +2,9 @@
 import { useSession, signIn, signOut } from "next-auth/react"
 import { useState } from "react"
 import Link from "next/link"
-import { ChevronDown, User, LogOut, Lightbulb } from "lucide-react"
+import { ChevronDown, User, LogOut } from "lucide-react"
+import  Lightbulb from "../public/icon_no_bg.png"
+import Image from "next/image"
 
 export default function Navbar() {
   const { data: session, status } = useSession()
@@ -15,7 +17,10 @@ export default function Navbar() {
           {/* Logo/Title */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center space-x-2">
-              <Lightbulb className="h-6 w-6 text-yellow-400" />
+              <Image
+              src={Lightbulb} alt="Ideas Logo"
+              className="h-8 w-8"
+              />
               <h1 className="text-2xl font-bold text-white">Ideas</h1>
             </Link>
           </div>
@@ -46,7 +51,10 @@ export default function Navbar() {
                       className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors duration-200"
                       onClick={() => setIsDropdownOpen(false)}
                     >
-                      <Lightbulb className="h-4 w-4 mr-3" />
+                      <Image
+              src={Lightbulb} alt="Ideas Logo"
+              className="h-4 w-4"
+              />
                       My Ideas
                     </Link>
                     <Link

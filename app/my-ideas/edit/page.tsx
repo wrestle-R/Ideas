@@ -137,6 +137,12 @@ export default function EditIdeaPage() {
     return html
   }
 
+  // useEffect(() => {
+  //   if (status === "unauthenticated") {
+  //     router.push("/auth/signin")
+  //   }
+  // }, [status, router])
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">

@@ -4,13 +4,21 @@ import { User, Mail, Github, Edit, Plus } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { createUserBio, getUserBio, updateUserBio } from '../../lib/actions'
 import Navbar from '@/components/Navbar'
+import { useRouter } from "next/navigation"
 
 const ProfilePage = () => {
   const { data: session, status } = useSession()
+  const router = useRouter()
   const [showBioForm, setShowBioForm] = useState(false)
   const [bio, setBio] = useState('')
   const [existingBio, setExistingBio] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/auth/signin")
+    }
+  }, [status, router])
 
   useEffect(() => {
     if (session?.user?.githubId) {

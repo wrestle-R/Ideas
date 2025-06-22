@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react"
 import { createIdea } from "@/lib/actions"
 import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 interface FormData {
   title: string
@@ -12,6 +13,7 @@ interface FormData {
 
 export default function CreateIdeaPage() {
   const { data: session, status } = useSession()
+  const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false)
   const [formData, setFormData] = useState<FormData>({
@@ -32,6 +34,12 @@ export default function CreateIdeaPage() {
       console.log('User image:', session.user.image)
     }
   }, [session, status])
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/auth/signin")
+    }
+  }, [status, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -107,6 +115,17 @@ export default function CreateIdeaPage() {
       .replace(/\n/gim, '<br>')
 
     return html
+  }
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Search, Filter } from 'lucide-react'
+import { Search } from 'lucide-react'
 
 interface SearchComponentProps {
   searchQuery: string
@@ -35,21 +35,9 @@ const SearchComponent = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search for ideas, topics, or creators..."
-            className="w-full pl-12 pr-6 py-4 bg-gray-900/60 border border-gray-700/60 rounded-l-xl text-white text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/60 focus:border-gray-500/60 transition-all duration-300 backdrop-blur-md hover:bg-gray-900/70 focus:bg-gray-900/80"
+            className="w-full pl-12 pr-6 py-4 bg-gray-900/60 border border-gray-700/60 rounded-xl text-white text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/60 focus:border-gray-500/60 transition-all duration-300 backdrop-blur-md hover:bg-gray-900/70 focus:bg-gray-900/80"
           />
         </div>
-        
-        {/* Filter Toggle Button */}
-        <button
-          type="button"
-          onClick={() => onCategoryChange('')}
-          className={`px-5 py-4 bg-gray-900/60 border-t border-r border-b border-gray-700/60 text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 transition-all duration-300 backdrop-blur-md rounded-r-xl group ${
-            selectedCategory === '' ? 'bg-gray-800/80 text-gray-200' : ''
-          }`}
-          title="Clear all filters"
-        >
-          <Filter className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
-        </button>
       </div>
       
       {/* Category Filters */}
@@ -59,7 +47,13 @@ const SearchComponent = ({
             <button 
               key={category.value}
               type="button"
-              onClick={() => onCategoryChange(selectedCategory === category.value ? '' : category.value)}
+              onClick={() => {
+                if (selectedCategory === category.value) {
+                  onCategoryChange('') // Reset filter
+                } else {
+                  onCategoryChange(category.value)
+                }
+              }}
               className={`px-4 py-2.5 text-sm font-medium rounded-full border transition-all duration-300 transform hover:scale-105 active:scale-95 ${
                 selectedCategory === category.value
                   ? 'bg-white/25 text-white border-white/50 shadow-lg shadow-white/10'
@@ -71,6 +65,20 @@ const SearchComponent = ({
               </span>
             </button>
           ))}
+          {/* Optionally, add an "All" button for clarity */}
+          {/* 
+          <button
+            type="button"
+            onClick={() => onCategoryChange('')}
+            className={`px-4 py-2.5 text-sm font-medium rounded-full border transition-all duration-300 ${
+              selectedCategory === '' 
+                ? 'bg-white/25 text-white border-white/50 shadow-lg shadow-white/10'
+                : 'bg-gray-900/40 text-gray-300 border-gray-700/60 hover:border-gray-600/70 hover:bg-gray-800/50 hover:text-gray-200'
+            }`}
+          >
+            All
+          </button>
+          */}
         </div>
       </div>
     </div>
