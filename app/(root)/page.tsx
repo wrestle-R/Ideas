@@ -20,6 +20,9 @@ interface Idea {
     name: string
   }
   text?: string
+  likesCount?: number
+  commentsCount?: number
+  userLiked?: boolean
 }
 
 export default function Home() {
@@ -34,7 +37,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   
-  const ITEMS_PER_PAGE =24
+  const ITEMS_PER_PAGE = 24
 
   const fetchIdeas = useCallback(async (isLoadMore = false) => {
     try {
@@ -43,7 +46,7 @@ export default function Home() {
       } else {
         setLoading(true)
       }
-      
+
       const offset = isLoadMore ? ideas.length : 0
       const [fetchedIdeas, total] = await Promise.all([
         getIdeas(ITEMS_PER_PAGE, offset, searchQuery, selectedCategory),
@@ -59,7 +62,7 @@ export default function Home() {
       } else {
         setIdeas(fetchedIdeas)
       }
-      
+
       setTotalCount(total)
       setHasMore((isLoadMore ? ideas.length : 0) + fetchedIdeas.length < total)
     } catch (err) {
@@ -74,12 +77,14 @@ export default function Home() {
   // Initial load
   useEffect(() => {
     fetchIdeas()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Always fetch ideas when searchQuery or selectedCategory changes (including when both are empty)
   useEffect(() => {
     setIdeas([])
     fetchIdeas()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedCategory])
 
   useEffect(() => {
@@ -152,7 +157,11 @@ export default function Home() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {ideas.map((idea) => (
-                <IdeaCard key={idea._id} idea={idea} />
+                <IdeaCard
+                  key={idea._id}
+                  idea={idea}
+                  currentUser={session?.user ? { id: session.user.id || session.user.email || '', name: session.user.name || '' } : undefined}
+                />
               ))}
             </div>
 

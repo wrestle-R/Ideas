@@ -227,46 +227,6 @@ export async function updateIdea(ideaId: string, formData: { title: string; desc
   }
 }
 
-export async function toggleLike(ideaId: string, authorId: string, authorName: string) {
-  try {
-    if (!ideaId || !authorId) {
-      return { error: 'Invalid parameters' }
-    }
-
-    // Check if user already liked this idea
-    const existingLike = await client.fetch(
-      `*[_type == "like" && ideaId == "${ideaId}" && author.id == "${authorId}"][0]`
-    )
-
-    if (existingLike) {
-      // Unlike - delete the like
-      await client.delete(existingLike._id)
-      revalidatePath(`/idea/${ideaId}`)
-      revalidatePath('/') // Refresh home page
-      return { success: true, action: 'unliked' }
-    } else {
-      // Like - create new like
-      const newLike = {
-        _type: 'like',
-        ideaId,
-        author: {
-          id: authorId,
-          name: authorName
-        },
-        createdAt: new Date().toISOString()
-      }
-
-      const result = await client.create(newLike)
-      revalidatePath(`/idea/${ideaId}`)
-      revalidatePath('/') // Refresh home page
-      return { success: true, action: 'liked', like: result }
-    }
-  } catch (error) {
-    console.error('Error toggling like:', error)
-    return { error: 'Failed to update like. Please try again.' }
-  }
-}
-
 export async function addComment(ideaId: string, text: string, authorId: string, providedAuthorName?: string) {
   try {
     if (!text.trim()) {
