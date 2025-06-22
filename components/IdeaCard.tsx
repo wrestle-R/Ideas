@@ -103,9 +103,9 @@ export default function IdeaCard({ idea, currentUser, onLikeUpdate }: IdeaCardPr
       <div className="bg-black/50 border border-white/30 rounded-lg p-6 hover:border-white/50 transition-all duration-200 hover:shadow-lg hover:shadow-white/10 group backdrop-blur-sm cursor-pointer w-[320px] h-[320px] flex flex-col justify-between min-h-0">
         {/* Category Badge */}
         {idea.category && (
-          <div className={`inline-block px-2 py-1 text-xs rounded-full border mb-2 ${getCategoryColor(idea.category)}`}>
+            <div className={`inline-flex px-3 py-1 w-fit text-xs rounded-xl border mb-2 ${getCategoryColor(idea.category)}`}>
             {idea.category.charAt(0).toUpperCase() + idea.category.slice(1)}
-          </div>
+            </div>
         )}
 
         {/* Idea Title */}
