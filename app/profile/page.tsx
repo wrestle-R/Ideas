@@ -75,7 +75,7 @@ const ProfilePage = () => {
       setIsLoading(false)
     }
   }
-
+  console.log(session.user)
   return (
     <div className="">
     <Navbar/>
