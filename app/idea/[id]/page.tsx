@@ -198,7 +198,7 @@ export default function IdeaPage() {
       .replace(/\*\*(.*?)\*\*/gim, '<strong class="font-bold text-white">$1</strong>')
       .replace(/\*(.*?)\*/gim, '<em class="italic text-gray-200">$1</em>')
       // Code blocks
-      .replace(/```([\s\S]*?)```/gim, '<pre class="bg-gray-800 border border-gray-600 rounded-lg p-4 my-3 overflow-x-auto"><code class="text-green-400 text-sm">$1</code></pre>')
+      .replace(/```([\s\S]*?)```/gim, '<pre class="bg-gray-800 border border-gray-600 rounded-lg p-4 my-3 overflow-x-scroll break-words"><code class="text-green-400 text-sm">$1</code></pre>')
       .replace(/`([^`]*)`/gim, '<code class="bg-gray-700 text-green-400 px-2 py-1 rounded text-sm">$1</code>')
       // Links
       .replace(/\[([^\]]*)\]\(([^\)]*)\)/gim, '<a href="$2" class="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">$1</a>')
@@ -289,14 +289,14 @@ export default function IdeaPage() {
 
   return (
     <motion.div 
-      className="min-h-screen bg-black text-white pt-16"
+      className="min-h-screen bg-black text-white pt-16 overflow-x-hidden"
       variants={pageVariants}
       initial="initial"
       animate="animate"
       exit="exit"
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800 opacity-50 -z-10"></div>
+      <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800 opacity-50 -z-10 overflow-x-hidden"></div>
       
       <div className="relative z-0 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
@@ -388,7 +388,7 @@ export default function IdeaPage() {
                 transition={{ delay: 0.7, duration: 0.6 }}
               >
                 <h2 className="text-2xl font-semibold text-white mb-4">Additional Notes</h2>
-                <div className="bg-gray-800/50 border border-gray-600 rounded-xl p-6">
+                <div className="bg-gray-800/50 border border-gray-600 rounded-xl p-6 overflow-x-auto break-words">
                   <div 
                     className="prose prose-invert max-w-none text-gray-200 text-sm leading-relaxed"
                     dangerouslySetInnerHTML={{ __html: parseMarkdown(idea.notes) }}
