@@ -1,5 +1,4 @@
-# 💡 Ideas
-
+#  <img src="public/icon_no_bg.png" alt="Ideas Icon" width="32" style="vertical-align:middle;"/> Ideas
 > A place to share cool ideas. Also, proof I can do thoda Next.js and GitHub Auth
 
 This project was me testing what I actually absorbed after a Next.js (App Router) tutorial.
