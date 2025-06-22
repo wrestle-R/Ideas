@@ -60,15 +60,6 @@ export default function AuthorPage() {
           getUserBio(authorId)
         ])
         
-        // Log what we can fetch for this user
-        console.log("Fetched for user:", {
-          authorId,
-          authorInfo,
-          bio: bioData,
-          totalIdeas: total,
-          ideas: fetchedIdeas
-        })
-        
         if (!authorInfo) {
           setError("Author not found")
         } else {
