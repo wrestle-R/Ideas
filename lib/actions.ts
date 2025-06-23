@@ -266,3 +266,151 @@ export async function addComment(ideaId: string, text: string, authorId: string,
     return { error: 'Failed to add comment. Please try again.' }
   }
 }
+
+export async function getVoteCount(ideaId: string): Promise<number> {
+  try {
+    const query = `count(*[_type == "vote" && ideaId == "${ideaId}" && voteType == "upvote"]) - count(*[_type == "vote" && ideaId == "${ideaId}" && voteType == "downvote"])`
+    const count = await client.fetch(query)
+    return count || 0
+  } catch (error) {
+    console.error('Error fetching vote count:', error)
+    return 0
+  }
+}
+
+export async function getVoteStatus(ideaId: string, userId: string): Promise<"upvote" | "downvote" | null> {
+  try {
+    if (!userId || userId === 'anonymous') return null
+    
+    const query = `*[_type == "vote" && ideaId == "${ideaId}" && author.id == "${userId}"][0].voteType`
+    const voteType = await client.fetch(query)
+    return voteType || null
+  } catch (error) {
+    console.error('Error fetching vote status:', error)
+    return null
+  }
+}
+
+export async function addVote(ideaId: string, userId: string, userName: string, voteType: "upvote" | "downvote") {
+  try {
+    if (!userId || userId === 'anonymous') {
+      return { error: 'Authentication required to vote' }
+    }
+
+    // First, remove any existing vote from this user for this idea
+    const existingVoteQuery = `*[_type == "vote" && ideaId == "${ideaId}" && author.id == "${userId}"][0]._id`
+    const existingVoteId = await client.fetch(existingVoteQuery)
+    
+    if (existingVoteId) {
+      await client.delete(existingVoteId)
+    }
+
+    // Add the new vote
+    const newVote = {
+      _type: 'vote',
+      ideaId,
+      voteType,
+      author: {
+        id: userId,
+        name: userName || 'Anonymous'
+      },
+      createdAt: new Date().toISOString()
+    }
+
+    const result = await client.create(newVote)
+    revalidatePath('/')
+    return { success: true, vote: result }
+  } catch (error) {
+    console.error('Error adding vote:', error)
+    return { error: 'Failed to add vote. Please try again.' }
+  }
+}
+
+export async function removeVote(ideaId: string, userId: string) {
+  try {
+    if (!userId || userId === 'anonymous') {
+      return { error: 'Authentication required to vote' }
+    }
+
+    const voteQuery = `*[_type == "vote" && ideaId == "${ideaId}" && author.id == "${userId}"][0]._id`
+    const voteId = await client.fetch(voteQuery)
+    
+    if (voteId) {
+      await client.delete(voteId)
+      revalidatePath('/')
+      return { success: true }
+    }
+    
+    return { error: 'Vote not found' }
+  } catch (error) {
+    console.error('Error removing vote:', error)
+    return { error: 'Failed to remove vote. Please try again.' }
+  }
+}
+
+interface IdeaWithVotes {
+  _id: string
+  title: string
+  slug: { current: string }
+  category: string
+  notes?: string
+  publishedAt: string
+  author: {
+    id: string
+    name: string
+  }
+  text?: string
+  commentsCount?: number
+  voteCount: number
+  userVote: "upvote" | "downvote" | null
+}
+
+export async function getIdeasWithVotes(currentUserId?: string): Promise<IdeaWithVotes[]> {
+  try {
+    const query = `*[_type == "idea"] | order(publishedAt desc) {
+      _id,
+      title,
+      slug,
+      category,
+      notes,
+      publishedAt,
+      author,
+      "text": array::join(string::split((pt::text(body)), "")[0..255], "") + "...",
+      "voteCount": count(*[_type == "vote" && ideaId == ^._id && voteType == "upvote"]) - count(*[_type == "vote" && ideaId == ^._id && voteType == "downvote"]),
+      ${currentUserId ? `"userVote": *[_type == "vote" && ideaId == ^._id && author.id == "${currentUserId}"][0].voteType,` : '"userVote": null,'}
+      "commentsCount": count(*[_type == "comment" && ideaId == ^._id])
+    }`
+    
+    const ideas = await client.fetch(query)
+    return ideas || []
+  } catch (error) {
+    console.error('Error fetching ideas with votes:', error)
+    return []
+  }
+}
+
+export async function getTotalIdeasCount(searchQuery?: string, selectedCategory?: string): Promise<number> {
+  try {
+    // For now, return the total count from getIdeasWithVotes
+    // You can optimize this later with a separate count query
+    const ideas: IdeaWithVotes[] = await getIdeasWithVotes()
+    
+    let filteredIdeas = ideas
+    
+    if (searchQuery) {
+      filteredIdeas = filteredIdeas.filter((idea: IdeaWithVotes) => 
+        idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (idea.text && idea.text.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    }
+    
+    if (selectedCategory) {
+      filteredIdeas = filteredIdeas.filter((idea: IdeaWithVotes) => idea.category === selectedCategory)
+    }
+    
+    return filteredIdeas.length
+  } catch (error) {
+    console.error('Error fetching total ideas count:', error)
+    return 0
+  }
+}

@@ -1,11 +1,12 @@
 "use client"
 import { Calendar, User } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import LightOn from "../public/light_on_bg.jpg"
 import LightOff from "../public/light_off_bg.jpg"
 import { motion, AnimatePresence } from "framer-motion"
+import { getVoteStatus, getVoteCount, addVote, removeVote } from "@/lib/actions"
 
 interface IdeaCardProps {
   idea: {
@@ -21,6 +22,8 @@ interface IdeaCardProps {
     }
     text?: string
     commentsCount?: number
+    voteCount?: number
+    userVote?: VoteType
   }
   currentUser?: {
     id: string
@@ -28,13 +31,104 @@ interface IdeaCardProps {
   }
 }
 
+type VoteType = "upvote" | "downvote" | null
+
 export default function IdeaCard({ idea, currentUser }: IdeaCardProps) {
-  // Voting state
-  const [voteCount, setVoteCount] = useState(0)
+  const [voteCount, setVoteCount] = useState<number>(idea.voteCount || 0)
+  const [userVote, setUserVote] = useState<VoteType>(idea.userVote || null)
   const [upvoteAnim, setUpvoteAnim] = useState(false)
   const [downvoteAnim, setDownvoteAnim] = useState(false)
-  const [isUpvoted, setIsUpvoted] = useState(false)
-  const [isDownvoted, setIsDownvoted] = useState(false)
+
+  // No need for useEffect to fetch vote data - it comes with the idea
+  // Only update if the idea prop changes
+  useEffect(() => {
+    setVoteCount(idea.voteCount || 0)
+    setUserVote(idea.userVote || null)
+  }, [idea.voteCount, idea.userVote])
+
+  const handleUpvote = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!currentUser) return
+
+    // Optimistic update - update UI immediately
+    const previousVote = userVote
+    const previousCount = voteCount
+
+    if (userVote === "upvote") {
+      // Remove upvote
+      setVoteCount(voteCount - 1)
+      setUserVote(null)
+    } else if (userVote === "downvote") {
+      // Switch from downvote to upvote
+      setVoteCount(voteCount + 2)
+      setUserVote("upvote")
+      setUpvoteAnim(true)
+      setTimeout(() => setUpvoteAnim(false), 600)
+    } else {
+      // Add upvote
+      setVoteCount(voteCount + 1)
+      setUserVote("upvote")
+      setUpvoteAnim(true)
+      setTimeout(() => setUpvoteAnim(false), 600)
+    }
+
+    // Background update - sync with server
+    try {
+      if (previousVote === "upvote") {
+        await removeVote(idea._id, currentUser.id)
+      } else {
+        await addVote(idea._id, currentUser.id, currentUser.name, "upvote")
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setVoteCount(previousCount)
+      setUserVote(previousVote)
+      console.error('Vote failed:', error)
+    }
+  }
+
+  const handleDownvote = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!currentUser) return
+
+    // Optimistic update - update UI immediately
+    const previousVote = userVote
+    const previousCount = voteCount
+
+    if (userVote === "downvote") {
+      // Remove downvote
+      setVoteCount(voteCount + 1)
+      setUserVote(null)
+    } else if (userVote === "upvote") {
+      // Switch from upvote to downvote
+      setVoteCount(voteCount - 2)
+      setUserVote("downvote")
+      setDownvoteAnim(true)
+      setTimeout(() => setDownvoteAnim(false), 600)
+    } else {
+      // Add downvote
+      setVoteCount(voteCount - 1)
+      setUserVote("downvote")
+      setDownvoteAnim(true)
+      setTimeout(() => setDownvoteAnim(false), 600)
+    }
+
+    // Background update - sync with server
+    try {
+      if (previousVote === "downvote") {
+        await removeVote(idea._id, currentUser.id)
+      } else {
+        await addVote(idea._id, currentUser.id, currentUser.name, "downvote")
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setVoteCount(previousCount)
+      setUserVote(previousVote)
+      console.error('Vote failed:', error)
+    }
+  }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -47,7 +141,7 @@ export default function IdeaCard({ idea, currentUser }: IdeaCardProps) {
     return date.toLocaleDateString()
   }
 
-  const getCategoryColor = (category: string) => {
+  const getCategoryColor = (category: string): string => {
     const colors: { [key: string]: string } = {
       technology: "bg-blue-500/20 text-blue-300 border-blue-500/30",
       business: "bg-green-500/20 text-green-300 border-green-500/30",
@@ -58,6 +152,16 @@ export default function IdeaCard({ idea, currentUser }: IdeaCardProps) {
       other: "bg-gray-500/20 text-gray-300 border-gray-500/30"
     }
     return colors[category] || colors.other
+  }
+
+  const voteButtonClass = (isActive: boolean): string => {
+    const baseClass = "rounded-full w-10 h-10 flex items-center justify-center relative overflow-visible transition-all duration-300 transform"
+    
+    if (!currentUser) {
+      return `${baseClass} cursor-not-allowed opacity-50`
+    }
+    
+    return `${baseClass} hover:scale-110 cursor-pointer`
   }
 
   return (
@@ -98,50 +202,42 @@ export default function IdeaCard({ idea, currentUser }: IdeaCardProps) {
         </div>
 
         {/* Engagement Stats */}
-        <div className="flex items-center justify-between pt-3 border-t border-white/30">
+        <div 
+          className="flex items-center justify-between pt-3 border-t border-white/30"
+          onClick={e => {
+            e.preventDefault()
+            e.stopPropagation()
+          }}
+        >
           <div className="flex items-center gap-3">
             {/* Upvote/Downvote */}
             <div className="flex items-center gap-4 relative">
               {/* Light On (Upvote) */}
               <button
-                className="rounded-full w-10 h-10 flex items-center justify-center relative overflow-visible transition-all duration-300 transform hover:scale-110"
-                onClick={e => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  if (isUpvoted) {
-                    setVoteCount(voteCount - 1)
-                    setIsUpvoted(false)
-                    return
-                  }
-                  setVoteCount(isDownvoted ? voteCount + 2 : voteCount + 1)
-                  setIsUpvoted(true)
-                  setIsDownvoted(false)
-                  setUpvoteAnim(true)
-                  setTimeout(() => setUpvoteAnim(false), 600)
-                }}
+                className={voteButtonClass(userVote === "upvote")}
+                onClick={currentUser ? handleUpvote : undefined}
+                disabled={!currentUser}
                 style={{ 
                   padding: 0, 
                   border: "none", 
                   background: "none"
                 }}
                 type="button"
-                aria-pressed={isUpvoted}
+                aria-pressed={userVote === "upvote"}
+                title={!currentUser ? "Login to vote" : "Upvote"}
               >
-<Image
-  src={LightOn}
-  alt="Light On (Upvote)"
-  width={36}
-  height={36}
-  className={`rounded-full transition-all duration-300 ${
-    isUpvoted
-      ? "opacity-100 brightness-110 saturate-200 contrast-125 shadow-[0_0_16px_rgba(255,255,0,0.5)]"
-      : "opacity-70 hover:opacity-90"
-  }`}
-  priority={false}
-/>
-
-
-
+                <Image
+                  src={LightOn}
+                  alt="Light On (Upvote)"
+                  width={36}
+                  height={36}
+                  className={`rounded-full transition-all duration-300 ${
+                    userVote === "upvote"
+                      ? "opacity-100 brightness-110 saturate-200 contrast-125 shadow-[0_0_16px_rgba(255,255,0,0.5)]"
+                      : "opacity-70 hover:opacity-90"
+                  }`}
+                  priority={false}
+                />
                 <AnimatePresence>
                   {upvoteAnim && (
                     <motion.div
@@ -190,50 +286,40 @@ export default function IdeaCard({ idea, currentUser }: IdeaCardProps) {
                       ? "0 0 10px rgba(251, 146, 60, 0.3)"
                       : "none"
                 }}
+                onClick={e => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                }}
               >
                 {voteCount}
               </motion.span>
 
               {/* Light Off (Downvote) */}
               <button
-                className="rounded-full w-10 h-10 flex items-center justify-center relative overflow-visible transition-all duration-300 transform hover:scale-110"
-                onClick={e => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  if (isDownvoted) {
-                    setVoteCount(voteCount + 1)
-                    setIsDownvoted(false)
-                    return
-                  }
-                  setVoteCount(isUpvoted ? voteCount - 2 : voteCount - 1)
-                  setIsDownvoted(true)
-                  setIsUpvoted(false)
-                  setDownvoteAnim(true)
-                  setTimeout(() => setDownvoteAnim(false), 600)
-                }}
+                className={voteButtonClass(userVote === "downvote")}
+                onClick={currentUser ? handleDownvote : undefined}
+                disabled={!currentUser}
                 style={{ 
                   padding: 0, 
                   border: "none", 
                   background: "none"
                 }}
                 type="button"
-                aria-pressed={isDownvoted}
+                aria-pressed={userVote === "downvote"}
+                title={!currentUser ? "Login to vote" : "Downvote"}
               >
-<Image
-  src={LightOff}
-  alt="Light Off (Downvote)"
-  width={36}
-  height={36}
-  className={`w-9 h-9 rounded-full transition-all duration-300 ${
-    isDownvoted
-      ? "opacity-100 brightness-95 saturate-400 shadow-[0_0_12px_4px_rgba(0,191,255,0.4)]"
-      : "opacity-70 hover:opacity-90"
-  }`}
-  priority={false}
-/>
-
-
-
+                <Image
+                  src={LightOff}
+                  alt="Light Off (Downvote)"
+                  width={36}
+                  height={36}
+                  className={`w-9 h-9 rounded-full transition-all duration-300 ${
+                    userVote === "downvote"
+                      ? "opacity-100 brightness-95 saturate-400 shadow-[0_0_12px_4px_rgba(0,191,255,0.4)]"
+                      : "opacity-70 hover:opacity-90"
+                  }`}
+                  priority={false}
+                />
                 <AnimatePresence>
                   {downvoteAnim && (
                     <motion.div
@@ -260,7 +346,14 @@ export default function IdeaCard({ idea, currentUser }: IdeaCardProps) {
               </button>
             </div>
           </div>
-          <span className="text-white hover:text-white text-sm font-medium transition-colors">
+          <span 
+            className="text-white hover:text-white text-sm font-medium transition-colors cursor-pointer"
+            onClick={e => {
+              e.stopPropagation()
+              // Allow navigation for the "View →" button
+              window.location.href = `/idea/${idea._id}`
+            }}
+          >
             View →
           </span>
         </div>

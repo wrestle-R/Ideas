@@ -1,7 +1,7 @@
 "use client"
 import { useSession } from "next-auth/react"
 import { useState, useEffect, useCallback } from "react"
-import { getIdeas, getTotalIdeasCount } from "@/lib/sanity"
+import { getIdeasWithVotes, getTotalIdeasCount } from "@/lib/actions"
 import HeroSection from "@/components/HeroSection"
 import StatsSection from "@/components/StatsSection"
 import IdeaCard from "@/components/IdeaCard"
@@ -20,15 +20,16 @@ interface Idea {
     name: string
   }
   text?: string
-  likesCount?: number
   commentsCount?: number
-  userLiked?: boolean
+  voteCount?: number
+  userVote?: "upvote" | "downvote" | null
 }
 
 export default function Home() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [ideas, setIdeas] = useState<Idea[]>([])
+  const [allIdeas, setAllIdeas] = useState<Idea[]>([]) // Store all fetched ideas
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -47,24 +48,39 @@ export default function Home() {
         setLoading(true)
       }
 
-      const offset = isLoadMore ? ideas.length : 0
-      const [fetchedIdeas, total] = await Promise.all([
-        getIdeas(ITEMS_PER_PAGE, offset, searchQuery, selectedCategory),
-        getTotalIdeasCount(searchQuery, selectedCategory)
-      ])
-      // Log ideas and total count for debugging
-      console.log('Fetched ideas:', fetchedIdeas)
-      console.log('Total count:', total)
-      console.log('Search query:', searchQuery)
-      console.log('Selected category:', selectedCategory)
-      if (isLoadMore) {
-        setIdeas(prev => [...prev, ...fetchedIdeas])
-      } else {
-        setIdeas(fetchedIdeas)
+      // Only fetch from server on initial load or when user changes
+      if (!isLoadMore) {
+        const currentUserId = session?.user?.id || session?.user?.email || undefined
+        const fetchedIdeas = await getIdeasWithVotes(currentUserId)
+        setAllIdeas(fetchedIdeas)
       }
 
-      setTotalCount(total)
-      setHasMore((isLoadMore ? ideas.length : 0) + fetchedIdeas.length < total)
+      // Apply client-side filtering
+      let filteredIdeas = allIdeas
+      
+      if (searchQuery) {
+        filteredIdeas = filteredIdeas.filter(idea => 
+          idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (idea.text && idea.text.toLowerCase().includes(searchQuery.toLowerCase()))
+        )
+      }
+      
+      if (selectedCategory) {
+        filteredIdeas = filteredIdeas.filter(idea => idea.category === selectedCategory)
+      }
+
+      // Apply pagination
+      const offset = isLoadMore ? ideas.length : 0
+      const paginatedIdeas = filteredIdeas.slice(offset, offset + ITEMS_PER_PAGE)
+
+      if (isLoadMore) {
+        setIdeas(prev => [...prev, ...paginatedIdeas])
+      } else {
+        setIdeas(paginatedIdeas)
+      }
+
+      setTotalCount(filteredIdeas.length)
+      setHasMore((isLoadMore ? ideas.length : 0) + paginatedIdeas.length < filteredIdeas.length)
     } catch (err) {
       setError("Failed to load ideas. Please try again later.")
       console.error("Error fetching ideas:", err)
@@ -72,20 +88,57 @@ export default function Home() {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [searchQuery, selectedCategory, ideas.length])
+  }, [searchQuery, selectedCategory, ideas.length, session?.user, allIdeas])
 
-  // Initial load
+  // Initial load - fetch all ideas
   useEffect(() => {
-    fetchIdeas()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    const loadInitialData = async () => {
+      try {
+        setLoading(true)
+        const currentUserId = session?.user?.id || session?.user?.email || undefined
+        const fetchedIdeas = await getIdeasWithVotes(currentUserId)
+        setAllIdeas(fetchedIdeas)
+        
+        // Apply initial pagination
+        const initialIdeas = fetchedIdeas.slice(0, ITEMS_PER_PAGE)
+        setIdeas(initialIdeas)
+        setTotalCount(fetchedIdeas.length)
+        setHasMore(initialIdeas.length < fetchedIdeas.length)
+      } catch (err) {
+        setError("Failed to load ideas. Please try again later.")
+        console.error("Error fetching ideas:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  // Always fetch ideas when searchQuery or selectedCategory changes (including when both are empty)
+    if (status !== 'loading') {
+      loadInitialData()
+    }
+  }, [session?.user, status])
+
+  // Filter and paginate when search/category changes
   useEffect(() => {
-    setIdeas([])
-    fetchIdeas()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, selectedCategory])
+    if (allIdeas.length > 0) {
+      let filteredIdeas = allIdeas
+      
+      if (searchQuery) {
+        filteredIdeas = filteredIdeas.filter(idea => 
+          idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (idea.text && idea.text.toLowerCase().includes(searchQuery.toLowerCase()))
+        )
+      }
+      
+      if (selectedCategory) {
+        filteredIdeas = filteredIdeas.filter(idea => idea.category === selectedCategory)
+      }
+
+      const paginatedIdeas = filteredIdeas.slice(0, ITEMS_PER_PAGE)
+      setIdeas(paginatedIdeas)
+      setTotalCount(filteredIdeas.length)
+      setHasMore(paginatedIdeas.length < filteredIdeas.length)
+    }
+  }, [searchQuery, selectedCategory, allIdeas])
 
   useEffect(() => {
     // If you want to protect this page:
@@ -103,7 +156,24 @@ export default function Home() {
   }
 
   const loadMoreIdeas = async () => {
-    await fetchIdeas(true)
+    let filteredIdeas = allIdeas
+    
+    if (searchQuery) {
+      filteredIdeas = filteredIdeas.filter(idea => 
+        idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (idea.text && idea.text.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    }
+    
+    if (selectedCategory) {
+      filteredIdeas = filteredIdeas.filter(idea => idea.category === selectedCategory)
+    }
+
+    const offset = ideas.length
+    const moreIdeas = filteredIdeas.slice(offset, offset + ITEMS_PER_PAGE)
+    
+    setIdeas(prev => [...prev, ...moreIdeas])
+    setHasMore(ideas.length + moreIdeas.length < filteredIdeas.length)
   }
 
   return (
