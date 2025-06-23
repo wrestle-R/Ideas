@@ -59,12 +59,14 @@ export default function EditIdeaPage() {
           return
         }
 
-        // Check if user owns this idea
-        const authorId = (session?.user as any)?.githubId?.toString() || session?.user?.email || ''
-        if (fetchedIdea.author.id !== authorId) {
-          setError('You can only edit your own ideas')
-          setLoading(false)
-          return
+        // Optional: Check if user owns this idea (only if session exists)
+        if (session?.user) {
+          const authorId = (session?.user as any)?.githubId?.toString() || session?.user?.email || ''
+          if (fetchedIdea.author.id !== authorId) {
+            setError('You can only edit your own ideas')
+            setLoading(false)
+            return
+          }
         }
 
         setIdea(fetchedIdea)
@@ -82,9 +84,9 @@ export default function EditIdeaPage() {
       }
     }
 
-    if (status === 'authenticated' && ideaId) {
+    if (ideaId) {
       fetchIdea()
-    } else if (status === 'unauthenticated') {
+    } else {
       setLoading(false)
     }
   }, [ideaId, session, status])
@@ -133,19 +135,6 @@ export default function EditIdeaPage() {
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-400">Loading idea...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (status === 'unauthenticated') {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Please sign in to edit ideas</h1>
-          <Link href="/api/auth/signin" className="text-blue-400 hover:text-blue-300">
-            Sign In
-          </Link>
         </div>
       </div>
     )
