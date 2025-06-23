@@ -5,6 +5,9 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { getIdeaById } from "@/lib/sanity"
 import { updateIdea } from "@/lib/actions"
 import Link from "next/link"
+import ReactMarkdown from "react-markdown"
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
+import { tomorrow } from "react-syntax-highlighter/dist/esm/styles/prism"
 
 interface FormData {
   title: string
@@ -116,25 +119,6 @@ export default function EditIdeaPage() {
       ...prev,
       [name]: value
     }))
-  }
-
-  const parseMarkdown = (text: string) => {
-    let html = text
-      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold text-white mb-2 mt-4">$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold text-white mb-3 mt-5">$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold text-white mb-4 mt-6">$1</h1>')
-      .replace(/\*\*\*(.*)\*\*\*/gim, '<strong class="font-bold text-white"><em class="italic">$1</em></strong>')
-      .replace(/\*\*(.*)\*\*/gim, '<strong class="font-bold text-white">$1</strong>')
-      .replace(/\*(.*)\*/gim, '<em class="italic text-gray-200">$1</em>')
-      .replace(/```([\s\S]*?)```/gim, '<pre class="bg-gray-800 border border-gray-600 rounded-lg p-4 my-3 overflow-x-auto"><code class="text-green-400 text-sm">$1</code></pre>')
-      .replace(/`([^`]*)`/gim, '<code class="bg-gray-700 text-green-400 px-2 py-1 rounded text-sm">$1</code>')
-      .replace(/\[([^\]]*)\]\(([^\)]*)\)/gim, '<a href="$2" class="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">$1</a>')
-      .replace(/^\- (.*$)/gim, '<li class="text-gray-200 ml-4">• $1</li>')
-      .replace(/^\* (.*$)/gim, '<li class="text-gray-200 ml-4">• $1</li>')
-      .replace(/^\+ (.*$)/gim, '<li class="text-gray-200 ml-4">• $1</li>')
-      .replace(/\n/gim, '<br>')
-
-    return html
   }
 
   // useEffect(() => {
@@ -289,23 +273,99 @@ export default function EditIdeaPage() {
                       <textarea
                         id="notes"
                         name="notes"
-                        rows={8}
+                        rows={16}
                         value={formData.notes}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none group-hover:border-gray-500 font-mono text-sm"
+                        className="w-full px-6 py-4 bg-gray-800/80 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-y group-hover:border-gray-500 font-mono text-sm leading-relaxed scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500 scrollbar-thumb-rounded-full scrollbar-track-rounded-full"
                         placeholder="Add detailed notes, implementation ideas, or research links..."
+                        style={{ 
+                          minHeight: '400px',
+                          scrollbarWidth: 'thin',
+                          scrollbarColor: '#4B5563 #1F2937'
+                        }}
                       />
-                      <div className="absolute bottom-3 right-3 text-xs text-gray-500">
+                      <div className="absolute bottom-4 right-4 text-xs text-gray-500 bg-gray-900/80 px-2 py-1 rounded backdrop-blur-sm">
                         {formData.notes.length} chars
                       </div>
                     </div>
                   ) : (
-                    <div className="min-h-[200px] w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-xl transition-all duration-300">
+                    <div className="min-h-[400px] w-full px-6 py-4 bg-gray-800/80 border border-gray-600 rounded-xl transition-all duration-300 overflow-y-auto max-h-[500px]">
                       {formData.notes.trim() ? (
-                        <div 
-                          className="prose prose-invert max-w-none text-gray-200 text-sm leading-relaxed"
-                          dangerouslySetInnerHTML={{ __html: parseMarkdown(formData.notes) }}
-                        />
+                        <div className="prose prose-invert max-w-none text-gray-200 text-sm leading-relaxed">
+                          <ReactMarkdown
+                            components={{
+                              code({ node, className, children, ...props }) {
+                                const match = /language-(\w+)/.exec(className || "")
+                                const isInline = !match
+                                return !isInline ? (
+                                 <SyntaxHighlighter
+                                    style={tomorrow as any}
+                                    language={match[1]}
+                                    PreTag="div"
+                                    className="rounded-md my-3"
+                                  >
+                                    {String(children).replace(/\n$/, "")}
+                                  </SyntaxHighlighter>
+                                ) : (
+                                  <code className="bg-gray-700 text-green-400 px-2 py-1 rounded text-sm font-mono" {...props}>
+                                    {children}
+                                  </code>
+                                )
+                              },
+                              h1: ({ children }) => (
+                                <h1 className="text-2xl font-bold text-white mb-4 mt-6">{children}</h1>
+                              ),
+                              h2: ({ children }) => (
+                                <h2 className="text-xl font-semibold text-white mb-3 mt-5">{children}</h2>
+                              ),
+                              h3: ({ children }) => (
+                                <h3 className="text-lg font-semibold text-white mb-2 mt-4">{children}</h3>
+                              ),
+                              p: ({ children }) => <p className="text-gray-200 mb-4 leading-relaxed">{children}</p>,
+                              ul: ({ children }) => (
+                                <ul className="list-disc list-inside mb-4 space-y-1 text-gray-200 ml-4">{children}</ul>
+                              ),
+                              ol: ({ children }) => (
+                                <ol className="list-decimal list-inside mb-4 space-y-1 text-gray-200 ml-4">{children}</ol>
+                              ),
+                              li: ({ children }) => <li className="text-gray-200">{children}</li>,
+                              blockquote: ({ children }) => (
+                                <blockquote className="border-l-4 border-blue-500 pl-4 py-2 mb-4 bg-gray-700/50 text-gray-200 italic">
+                                  {children}
+                                </blockquote>
+                              ),
+                              a: ({ href, children }) => (
+                                <a
+                                  href={href}
+                                  className="text-blue-400 hover:text-blue-300 underline"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {children}
+                                </a>
+                              ),
+                              table: ({ children }) => (
+                                <div className="overflow-x-auto mb-4">
+                                  <table className="min-w-full border border-gray-600">{children}</table>
+                                </div>
+                              ),
+                              thead: ({ children }) => <thead className="bg-gray-700">{children}</thead>,
+                              th: ({ children }) => (
+                                <th className="px-4 py-2 text-left font-semibold text-white border-b border-gray-600">
+                                  {children}
+                                </th>
+                              ),
+                              td: ({ children }) => (
+                                <td className="px-4 py-2 text-gray-200 border-b border-gray-600">{children}</td>
+                              ),
+                              hr: () => <hr className="my-6 border-t border-gray-600" />,
+                              strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
+                              em: ({ children }) => <em className="italic text-gray-200">{children}</em>,
+                            }}
+                          >
+                            {formData.notes}
+                          </ReactMarkdown>
+                        </div>
                       ) : (
                         <div className="flex items-center justify-center h-48 text-gray-500">
                           <div className="text-center">
