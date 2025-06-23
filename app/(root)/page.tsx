@@ -195,7 +195,7 @@ export default function Home() {
       </section>
 
       {/* Ideas Grid */}
-      <main className="container mx-auto px-6 pb-8">
+      <main className="container mx-auto px-6 flex justify-center pb-8">
         
 
         {loading && (
@@ -225,7 +225,7 @@ export default function Home() {
 
         {!loading && !error && ideas.length > 0 && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1  md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-16">
               {ideas.map((idea) => (
                 <IdeaCard
                   key={idea._id}
