@@ -3,6 +3,9 @@ import { useState, useEffect } from "react"
 import { createIdea } from "@/lib/actions"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import ReactMarkdown from "react-markdown"
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
+import { tomorrow } from "react-syntax-highlighter/dist/esm/styles/prism"
 
 interface FormData {
   title: string
@@ -16,11 +19,40 @@ export default function CreateIdeaPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false)
+  
+  // Default markdown template
+  const defaultNotesTemplate = `# Implementation Plan
+
+## Overview
+Brief description of how to implement this idea...
+
+## Key Features
+- Feature 1
+- Feature 2
+- Feature 3
+
+## Technical Requirements
+\`\`\`javascript
+// Example code or pseudocode
+function exampleFunction() {
+  return "Hello World";
+}
+\`\`\`
+
+## Next Steps
+1. Research phase
+2. Prototype development
+3. Testing and validation
+
+---
+
+*Feel free to modify or replace this template with your own notes*`
+
   const [formData, setFormData] = useState<FormData>({
     title: "",
     description: "",
     category: "",
-    notes: ""
+    notes: defaultNotesTemplate
   })
 
   // Log session information
@@ -45,6 +77,9 @@ export default function CreateIdeaPage() {
     e.preventDefault()
     setIsSubmitting(true)
     
+    // Check if notes are still the default template
+    const isUsingDefaultNotes = formData.notes.trim() === defaultNotesTemplate.trim()
+    
     try {
       const formDataObj = new FormData(e.currentTarget as HTMLFormElement)
       
@@ -52,6 +87,11 @@ export default function CreateIdeaPage() {
       if (session?.user) {
         formDataObj.append('authorId', (session.user as any).githubId?.toString() || session.user.email || '')
         formDataObj.append('authorName', session.user.name || '')
+      }
+      
+      // If using default notes, send empty notes instead
+      if (isUsingDefaultNotes) {
+        formDataObj.set('notes', '')
       }
       
       const result = await createIdea(formDataObj)
@@ -63,13 +103,7 @@ export default function CreateIdeaPage() {
         alert("Idea created successfully!")
         
         // Reset form and redirect to my-ideas
-        setFormData({
-          title: "",
-          description: "",
-          category: "",
-          notes: ""
-        })
-        setIsPreviewMode(false)
+        handleReset()
         
         // Redirect to my-ideas page after successful creation
         window.location.href = '/my-ideas'
@@ -91,30 +125,23 @@ export default function CreateIdeaPage() {
     }))
   }
 
-  // Simple markdown parser for preview
-  const parseMarkdown = (text: string) => {
-    let html = text
-      // Headers
-      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold text-white mb-2 mt-4">$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold text-white mb-3 mt-5">$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold text-white mb-4 mt-6">$1</h1>')
-      // Bold and italic
-      .replace(/\*\*\*(.*)\*\*\*/gim, '<strong class="font-bold text-white"><em class="italic">$1</em></strong>')
-      .replace(/\*\*(.*)\*\*/gim, '<strong class="font-bold text-white">$1</strong>')
-      .replace(/\*(.*)\*/gim, '<em class="italic text-gray-200">$1</em>')
-      // Code blocks
-      .replace(/```([\s\S]*?)```/gim, '<pre class="bg-gray-800 border border-gray-600 rounded-lg p-4 my-3 overflow-x-auto"><code class="text-green-400 text-sm">$1</code></pre>')
-      .replace(/`([^`]*)`/gim, '<code class="bg-gray-700 text-green-400 px-2 py-1 rounded text-sm">$1</code>')
-      // Links
-      .replace(/\[([^\]]*)\]\(([^\)]*)\)/gim, '<a href="$2" class="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">$1</a>')
-      // Lists
-      .replace(/^\- (.*$)/gim, '<li class="text-gray-200 ml-4">• $1</li>')
-      .replace(/^\* (.*$)/gim, '<li class="text-gray-200 ml-4">• $1</li>')
-      .replace(/^\+ (.*$)/gim, '<li class="text-gray-200 ml-4">• $1</li>')
-      // Line breaks
-      .replace(/\n/gim, '<br>')
+  const handleReset = () => {
+    setFormData({
+      title: "",
+      description: "",
+      category: "",
+      notes: defaultNotesTemplate
+    })
+    setIsPreviewMode(false)
+  }
 
-    return html
+  // Check if form is valid for submission
+  const isFormValid = () => {
+    const hasTitle = formData.title.trim().length > 0
+    const hasDescription = formData.description.trim().length > 0
+    const isUsingDefaultNotes = formData.notes.trim() === defaultNotesTemplate.trim()
+    
+    return hasTitle && hasDescription && !isUsingDefaultNotes
   }
 
   if (status === "loading") {
@@ -210,7 +237,7 @@ export default function CreateIdeaPage() {
               <div className="group">
                 <div className="flex items-center justify-between mb-3">
                   <label htmlFor="notes" className="block text-sm font-semibold text-gray-200">
-                    Notes <span className="text-gray-500 text-xs font-normal">• markdown supported</span>
+                    Notes <span className="text-gray-500 text-xs font-normal">• markdown supported (optional)</span>
                   </label>
                   <div className="flex items-center bg-gray-800 rounded-lg p-1">
                     <button
@@ -238,31 +265,116 @@ export default function CreateIdeaPage() {
                   </div>
                 </div>
 
+               
+
                 <div className="relative">
                   {!isPreviewMode ? (
                     <div className="relative">
                       <textarea
                       id="notes"
                       name="notes"
-                      rows={8}
+                      rows={16}
                       value={formData.notes}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none group-hover:border-gray-500 font-mono text-sm"
-                      placeholder="Add detailed notes, implementation ideas, or research links.  Use **bold**, *italic*, `code`, # headings, and - lists for formatting."
+                      className="w-full px-6 py-4 bg-gray-800/80 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-y group-hover:border-gray-500 font-mono text-sm leading-relaxed scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500 scrollbar-thumb-rounded-full scrollbar-track-rounded-full"
+                      placeholder="Add detailed notes, implementation ideas, or research links. Use **bold**, *italic*, `code`, # headings, and - lists for formatting."
+                      style={{ 
+                        minHeight: '400px',
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: '#4B5563 #1F2937'
+                      }}
                       />
                       
-                      {/* Character count */}
-                      <div className="absolute bottom-3 right-3 text-xs text-gray-500">
-                      {formData.notes.length} chars
+                      {/* Character count and template indicator */}
+                      <div className="absolute bottom-4 right-4 flex items-center space-x-2 text-xs text-gray-500 bg-gray-900/80 px-2 py-1 rounded backdrop-blur-sm">
+                        {formData.notes.trim() === defaultNotesTemplate.trim() && (
+                          <span className="bg-yellow-600 text-yellow-100 px-2 py-1 rounded text-xs">
+                            Template
+                          </span>
+                        )}
+                        <span>{formData.notes.length} chars</span>
                       </div>
                     </div>
                   ) : (
-                    <div className="min-h-[200px] w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-xl transition-all duration-300">
+                    <div className="min-h-[400px] w-full px-6 py-4 bg-gray-800/80 border border-gray-600 rounded-xl transition-all duration-300 overflow-y-auto max-h-[500px]">
                       {formData.notes.trim() ? (
-                        <div 
-                          className="prose prose-invert max-w-none text-gray-200 text-sm leading-relaxed"
-                          dangerouslySetInnerHTML={{ __html: parseMarkdown(formData.notes) }}
-                        />
+                        <div className="prose prose-invert max-w-none text-gray-200 text-sm leading-relaxed">
+                          <ReactMarkdown
+                            components={{
+                              code({ className, children }) {
+                                const match = /language-(\w+)/.exec(className || "")
+                                const isInline = !match
+                                return !isInline ? (
+                                  <SyntaxHighlighter
+                                    style={tomorrow as any}
+                                    language={match[1]}
+                                    PreTag="div"
+                                    className="rounded-md my-3"
+                                  >
+                                    {String(children).replace(/\n$/, "")}
+                                  </SyntaxHighlighter>
+                                ) : (
+                                  <code className="bg-gray-700 text-green-400 px-2 py-1 rounded text-sm font-mono">
+                                    {children}
+                                  </code>
+                                )
+                              },
+                              h1: ({ children }) => (
+                                <h1 className="text-2xl font-bold text-white mb-4 mt-6 pb-2 border-b border-gray-600">
+                                  {children}
+                                </h1>
+                              ),
+                              h2: ({ children }) => (
+                                <h2 className="text-xl font-semibold text-white mb-3 mt-5">{children}</h2>
+                              ),
+                              h3: ({ children }) => (
+                                <h3 className="text-lg font-semibold text-white mb-2 mt-4">{children}</h3>
+                              ),
+                              p: ({ children }) => <p className="text-gray-200 mb-4 leading-relaxed">{children}</p>,
+                              ul: ({ children }) => (
+                                <ul className="list-disc list-inside mb-4 space-y-1 text-gray-200 ml-4">{children}</ul>
+                              ),
+                              ol: ({ children }) => (
+                                <ol className="list-decimal list-inside mb-4 space-y-1 text-gray-200 ml-4">{children}</ol>
+                              ),
+                              li: ({ children }) => <li className="text-gray-200">{children}</li>,
+                              blockquote: ({ children }) => (
+                                <blockquote className="border-l-4 border-blue-500 pl-4 py-2 mb-4 bg-gray-700/50 text-gray-200 italic rounded-r">
+                                  {children}
+                                </blockquote>
+                              ),
+                              a: ({ href, children }) => (
+                                <a
+                                  href={href}
+                                  className="text-blue-400 hover:text-blue-300 underline"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {children}
+                                </a>
+                              ),
+                              table: ({ children }) => (
+                                <div className="overflow-x-auto mb-4">
+                                  <table className="min-w-full border border-gray-600 rounded-lg">{children}</table>
+                                </div>
+                              ),
+                              thead: ({ children }) => <thead className="bg-gray-700">{children}</thead>,
+                              th: ({ children }) => (
+                                <th className="px-4 py-2 text-left font-semibold text-white border-b border-gray-600">
+                                  {children}
+                                </th>
+                              ),
+                              td: ({ children }) => (
+                                <td className="px-4 py-2 text-gray-200 border-b border-gray-600">{children}</td>
+                              ),
+                              hr: () => <hr className="my-6 border-t border-gray-600" />,
+                              strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
+                              em: ({ children }) => <em className="italic text-gray-200">{children}</em>,
+                            }}
+                          >
+                            {formData.notes}
+                          </ReactMarkdown>
+                        </div>
                       ) : (
                         <div className="flex items-center justify-center h-48 text-gray-500">
                           <div className="text-center">
@@ -275,38 +387,63 @@ export default function CreateIdeaPage() {
                   )}
                 </div>
 
-                {/* Subtle markdown help
-                {!isPreviewMode && formData.notes.length === 0 && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    <span className="opacity-75">
-                      Format with markdown: **bold**, *italic*, `code`, # headers, - lists
-                    </span>
+                {/* Clear template button */}
+                {formData.notes.trim() === defaultNotesTemplate.trim() && (
+                  <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, notes: "" }))}
+                    className="flex items-center text-sm bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white px-4 py-2 rounded-lg transition-all duration-200 border border-gray-700 hover:border-gray-500 shadow-sm"
+                  >
+                    <span className="mr-2">🗑️</span>
+                    Clear template and start fresh
+                  </button>
                   </div>
-                )} */}
+                )}
               </div>
 
               {/* Submit Buttons */}
-              <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-8">
-                <button
-                  type="button"
-                  className="px-8 py-3 border border-gray-600 text-gray-300 bg-transparent rounded-xl hover:bg-gray-800 hover:border-gray-500 transition-all duration-300 font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !formData.title.trim() || !formData.description.trim()}
-                  className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
-                >
-                  {isSubmitting ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Creating...</span>
-                    </div>
-                  ) : (
-                    "✨ Create Idea"
+              <div className="flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0 sm:space-x-4 pt-8">
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="px-6 py-3 border border-gray-600 text-gray-300 bg-transparent rounded-xl hover:bg-gray-800 hover:border-gray-500 transition-all duration-300 font-medium"
+                  >
+                    🔄 Reset
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => router.back()}
+                    className="px-6 py-3 border border-gray-600 text-gray-300 bg-transparent rounded-xl hover:bg-gray-800 hover:border-gray-500 transition-all duration-300 font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                
+                <div className="flex flex-col">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !isFormValid()}
+                    className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
+                  >
+                    {isSubmitting ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Creating...</span>
+                      </div>
+                    ) : (
+                      "✨ Create Idea"
+                    )}
+                  </button>
+                  
+                  {/* Validation message */}
+                  {!isFormValid() && formData.title.trim() && formData.description.trim() && (
+                    <p className="text-xs text-yellow-400 mt-1 text-center">
+                      Please customize or clear the notes template to continue
+                    </p>
                   )}
-                </button>
+                </div>
               </div>
             </form>
           </div>

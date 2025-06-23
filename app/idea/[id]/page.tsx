@@ -3,6 +3,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { getIdeaById, getCommentsForIdea, getAllCommentsForIdea } from '@/lib/sanity'
 import { addComment } from '@/lib/actions'
 import { Calendar, User, MessageCircle, ArrowLeft, Send } from 'lucide-react'
@@ -186,30 +189,85 @@ export default function IdeaPage() {
     return colors[category] || colors.other
   }
 
-  // Simple markdown parser for notes
-  const parseMarkdown = (text: string): string => {
-    let html = text
-      // Headers - only match when # is followed by a space
-      .replace(/^### (.+$)/gim, '<h3 class="text-lg font-semibold text-white mb-2 mt-4">$1</h3>')
-      .replace(/^## (.+$)/gim, '<h2 class="text-xl font-semibold text-white mb-3 mt-5">$1</h2>')
-      .replace(/^# (.+$)/gim, '<h1 class="text-2xl font-bold text-white mb-2 mt-3">$1</h1>')
-      // Bold and italic
-      .replace(/\*\*\*(.*?)\*\*\*/gim, '<strong class="font-bold text-white"><em class="italic">$1</em></strong>')
-      .replace(/\*\*(.*?)\*\*/gim, '<strong class="font-bold text-white">$1</strong>')
-      .replace(/\*(.*?)\*/gim, '<em class="italic text-gray-200">$1</em>')
-      // Code blocks
-      .replace(/```([\s\S]*?)```/gim, '<pre class="bg-gray-800 border border-gray-600 rounded-lg p-4 my-3 overflow-x-scroll break-words"><code class="text-green-400 text-sm">$1</code></pre>')
-      .replace(/`([^`]*)`/gim, '<code class="bg-gray-700 text-green-400 px-2 py-1 rounded text-sm">$1</code>')
-      // Links
-      .replace(/\[([^\]]*)\]\(([^\)]*)\)/gim, '<a href="$2" class="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">$1</a>')
-      // Lists - only match when - is followed by a space
-      .replace(/^- (.+$)/gim, '<li class="text-gray-200 ml-4 mb-1">• $1</li>')
-      .replace(/^\* (.+$)/gim, '<li class="text-gray-200 ml-4 mb-1">• $1</li>')
-      .replace(/^\+ (.+$)/gim, '<li class="text-gray-200 ml-4 mb-1">• $1</li>')
-      // Line breaks
-      .replace(/\n/gim, '<br>')
-
-    return html
+  // ReactMarkdown components for styling
+  const markdownComponents = {
+    code({ node, inline, className, children, ...props }: any) {
+      const match = /language-(\w+)/.exec(className || "")
+      return !inline && match ? (
+        <SyntaxHighlighter
+          style={tomorrow}
+          language={match[1]}
+          PreTag="div"
+          className="rounded-lg my-3"
+          {...props}
+        >
+          {String(children).replace(/\n$/, "")}
+        </SyntaxHighlighter>
+      ) : (
+        <code className="bg-gray-700 text-green-400 px-2 py-1 rounded text-sm font-mono" {...props}>
+          {children}
+        </code>
+      )
+    },
+    h1: ({ children }: any) => (
+      <h1 className="text-2xl font-bold text-white mb-3 mt-4">{children}</h1>
+    ),
+    h2: ({ children }: any) => (
+      <h2 className="text-xl font-semibold text-white mb-3 mt-5">{children}</h2>
+    ),
+    h3: ({ children }: any) => (
+      <h3 className="text-lg font-semibold text-white mb-2 mt-4">{children}</h3>
+    ),
+    p: ({ children }: any) => (
+      <p className="text-gray-200 mb-4 leading-relaxed">{children}</p>
+    ),
+    ul: ({ children }: any) => (
+      <ul className="list-disc list-inside mb-4 space-y-1 text-gray-200 ml-4">{children}</ul>
+    ),
+    ol: ({ children }: any) => (
+      <ol className="list-decimal list-inside mb-4 space-y-1 text-gray-200 ml-4">{children}</ol>
+    ),
+    li: ({ children }: any) => (
+      <li className="text-gray-200 mb-1">{children}</li>
+    ),
+    blockquote: ({ children }: any) => (
+      <blockquote className="border-l-4 border-blue-500 pl-4 py-2 mb-4 bg-blue-900/20 text-gray-200 italic">
+        {children}
+      </blockquote>
+    ),
+    a: ({ href, children }: any) => (
+      <a
+        href={href}
+        className="text-blue-400 hover:text-blue-300 underline"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {children}
+      </a>
+    ),
+    table: ({ children }: any) => (
+      <div className="overflow-x-auto mb-4">
+        <table className="min-w-full border border-gray-600 rounded-lg">{children}</table>
+      </div>
+    ),
+    thead: ({ children }: any) => (
+      <thead className="bg-gray-700">{children}</thead>
+    ),
+    th: ({ children }: any) => (
+      <th className="px-4 py-2 text-left font-semibold text-white border-b border-gray-600">
+        {children}
+      </th>
+    ),
+    td: ({ children }: any) => (
+      <td className="px-4 py-2 text-gray-200 border-b border-gray-600">{children}</td>
+    ),
+    hr: () => <hr className="my-6 border-t border-gray-600" />,
+    strong: ({ children }: any) => (
+      <strong className="font-bold text-white">{children}</strong>
+    ),
+    em: ({ children }: any) => (
+      <em className="italic text-gray-200">{children}</em>
+    ),
   }
 
   // Animation variants
@@ -388,11 +446,12 @@ export default function IdeaPage() {
                 transition={{ delay: 0.7, duration: 0.6 }}
               >
                 <h2 className="text-2xl font-semibold text-white mb-4">Additional Notes</h2>
-                <div className="bg-gray-800/50 border border-gray-600 rounded-xl p-6 overflow-x-auto break-words">
-                  <div 
-                    className="prose prose-invert max-w-none text-gray-200 text-sm leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: parseMarkdown(idea.notes) }}
-                  />
+                <div className="bg-gray-800/50 border border-gray-600 rounded-xl p-6 overflow-x-auto">
+                  <div className="prose prose-invert max-w-none">
+                    <ReactMarkdown components={markdownComponents}>
+                      {idea.notes}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               </motion.div>
             )}
