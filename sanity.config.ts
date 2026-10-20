@@ -19,6 +19,20 @@ export default defineConfig({
   dataset,
   // Add and edit the content schema in the './sanity/schemaTypes' folder
   schema,
+  form: {
+    components: {
+      portableText: {
+        plugins: (props) =>
+          props.renderDefault({
+            ...props,
+            plugins: {
+              ...props.plugins,
+              typography: { enabled: false },
+            },
+          }),
+      },
+    },
+  },
   plugins: [
     structureTool({structure}),
     // Vision is for querying with GROQ from inside the Studio
